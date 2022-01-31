@@ -14,12 +14,12 @@
     %%{hostalias, ["www.example.com", "example.com"]},
 
     %% PostgreSQL database connection
-    {dbhost, ""},
-    {dbport, 0 },
-    {dbuser, "williamthome"},
+    {dbhost, "localhost"},
+    {dbport, 5432},
+    {dbuser, "postgres"},
     {dbpassword, "postgres"},
     {dbdatabase, "todow"},
-    {dbschema, ""},
+    {dbschema, "public"},
 
     %% Depcache settings. The maximum size in Mbs
     {depcache_memory_max, 100},
