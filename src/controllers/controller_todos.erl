@@ -7,7 +7,7 @@
   process/4
 ]).
 
--define(TEMPLATE, "todos/new_or_edit.tpl").
+-define(TEMPLATE, "pages/todos/new_or_edit.tpl").
 -define(URL, todow_router:url_todos_new()).
 
 allowed_methods(Context) ->

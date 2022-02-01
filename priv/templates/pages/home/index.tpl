@@ -1,4 +1,4 @@
-{% extends "_html.tpl" %}
+{% extends "pages/_html.tpl" %}
 
 {% block body %}
   Hello, World!

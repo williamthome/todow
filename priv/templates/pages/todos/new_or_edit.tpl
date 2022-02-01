@@ -1,4 +1,4 @@
-{% extends "_html.tpl" %}
+{% extends "pages/_html.tpl" %}
 
 {% block body %}
   <form method="{{ form_method }}" action="{{ form_url }}">
