@@ -1,5 +1,5 @@
-%% @author 
-%% @copyright 2022 
+%% @author
+%% @copyright 2022
 %% Generated on 2022-01-31
 %% @doc This site was based on the 'empty' skeleton.
 
@@ -25,13 +25,18 @@
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
+-export([ context/0 ]).
 -export([ manage_schema/2 ]).
 
 %%====================================================================
 %% support functions go here
 %%====================================================================
 
+context() -> z:c(todow).
+
 manage_schema(_Version, _Context) ->
+    todow_db_schema:create_tables(),
+
     #datamodel{
         resources = [],
         media = [],
