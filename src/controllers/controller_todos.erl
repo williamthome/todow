@@ -15,7 +15,7 @@ allowed_methods(Context) ->
 
 process(?METHOD_GET, undefined, ?CONTENT_TYPE_HTML, Context) ->
   Vars = [ {form_url, ?URL} ],
-  z_template:render_to_iolist(?TEMPLATE, Vars, Context);
+  todow_controller:render(?TEMPLATE, Vars, Context);
 
 process(?METHOD_POST, ?CONTENT_TYPE_FORM_URLENCODED, ?CONTENT_TYPE_HTML, Context) ->
   Title = z_context:get_q(<<"title">>, Context, <<"unknown">>),
