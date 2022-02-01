@@ -1,6 +1,8 @@
 [
   {home, [], controller_template, [{template, "pages/home/index.tpl"}]},
 
-  {todos_new, ["todos"], controller_todos, []},
-  {todos_edit, ["todos", id], controller_todos, []}
+  {todos,        ["todos"],     controller_todos, []},
+  {todos_new,    ["todos"],     controller_todos, []},
+  {todos_update, ["todos", id], controller_todos, []},
+  {todos_delete, ["todos", id], controller_todos, []}
 ].

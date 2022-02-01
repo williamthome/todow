@@ -8,7 +8,7 @@
 ]).
 
 -define(TEMPLATE, "pages/todos/new_or_edit.tpl").
--define(URL, todow_router:url_todos_new()).
+-define(URL, todow_router:url_todos()).
 
 allowed_methods(Context) ->
   {[?METHOD_GET, ?METHOD_POST, ?METHOD_PATCH], Context}.
