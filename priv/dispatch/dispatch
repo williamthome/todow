@@ -1,5 +1,6 @@
 [
   {home, [], controller_template, [{template, "home.tpl"}]},
 
-  {todos_new, ["todos", "new"], controller_todos, []}
+  {todos_new, ["todos"], controller_todos, []},
+  {todos_edit, ["todos", id], controller_todos, []}
 ].
