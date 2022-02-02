@@ -27,6 +27,11 @@
 
 -export([ context/0 ]).
 -export([ manage_schema/2 ]).
+-export([ observe_acl_is_allowed/2 ]).
+
+-export([
+    'mqtt:test/#'/2
+]).
 
 %%====================================================================
 %% support functions go here
@@ -42,3 +47,13 @@ manage_schema(_Version, _Context) ->
         media = [],
         edges = []
     }.
+
+observe_acl_is_allowed(#acl_is_allowed{object = #acl_mqtt{topic = _Topic}}, _Context) ->
+    %% Allow anonymous access on this topic
+    true;
+observe_acl_is_allowed(#acl_is_allowed{}, _Context) ->
+    undefined.
+
+'mqtt:test/#'(Message, Context) ->
+    io:format("mqtt:test on site ~p received ~p\n", [ z_context:site(Context), Message ]),
+    ok.

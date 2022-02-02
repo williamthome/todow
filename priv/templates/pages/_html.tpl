@@ -8,5 +8,8 @@
 </head>
 <body>
   {% block body %}{% endblock %}
+
+  {% comment %} {% all include "_js_include.tpl" %} {% endcomment %}
+  {% comment %} {% all include "_html_head.tpl" %} {% endcomment %}
 </body>
 </html>

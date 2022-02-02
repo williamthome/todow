@@ -1,8 +1,11 @@
 [
   {home, [], controller_template, [{template, "pages/home/index.tpl"}]},
 
-  {todos,        ["todos"],     controller_todos, []},
-  {todos_new,    ["todos"],     controller_todos, []},
-  {todos_update, ["todos", id], controller_todos, []},
-  {todos_delete, ["todos", id], controller_todos, []}
+  {todos,        ["todos"],             controller_todos, [{method, get},    {action, index}]},
+  {todos_edit,   ["todos", id, "edit"], controller_todos, [{method, get},    {action, edit}]},
+  {todos_new,    ["todos", "new"],      controller_todos, [{method, get},    {action, new}]},
+  {todos_show,   ["todos", id],         controller_todos, [{method, get},    {action, show}]},
+  {todos_create, ["todos"],             controller_todos, [{method, post},   {action, create}]},
+  {todos_update, ["todos", id],         controller_todos, [{method, patch},  {action, update}]},
+  {todos_delete, ["todos", id],         controller_todos, [{method, delete}, {action, delete}]}
 ].
