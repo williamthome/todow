@@ -1,53 +1,67 @@
 -module(controller_todos).
 
+-include("../include/todow.hrl").
 -include("../include/todow_http.hrl").
 
--export([
-  event/2,
-  allowed_methods/1,
-  process/4
-]).
+-export([ allowed_methods/1, process/4 ]).
 
--define(TEMPLATE, "pages/todos/new_or_edit.tpl").
--define(URL, todow_router:url_todos()).
-
-event(_Submit, Context) ->
-  z_render:growl(<<"Ok!"/utf8>>, Context).
+-define(TEMPLATE_INDEX, "pages/todos/index.tpl").
+-define(TEMPLATE_NEW_OR_EDIT, "pages/todos/new_or_edit.tpl").
+-define(TEMPLATE_SHOW, "pages/todos/show.tpl").
 
 allowed_methods(Context) ->
   {[?METHOD_GET, ?METHOD_POST, ?METHOD_PATCH], Context}.
 
 process(?METHOD_GET, undefined, ?CONTENT_TYPE_HTML, Context) ->
-  Method = z_context:get(method, Context),
+  % z_mqtt:publish(
+  %   [<<"model">>, mymodel, <<"get">>, <<"foo">>, <<"bar">>, <<"baz">>],
+  %   #{ foo => bar },
+  %   #{ qos => 0, retain => false },
+  %   Context
+  % ),
+
   Action = z_context:get(action, Context),
-  io:format("~p\nMETHOD: ~p | ACTION: ~p\n", [Context, Method, Action]),
-
-  z_mqtt:publish(
-    [<<"model">>, mymodel, <<"get">>, <<"foo">>, <<"bar">>, <<"baz">>],
-    #{ foo => bar },
-    #{ qos => 0, retain => false },
-    Context
-  ),
-
-  % z_mqtt:publish([<<"test">>], #{ ping => pong }, Context),
-
-  Id = todow_http:get_query(id, Context),
-  render(Id, Context);
+  render(Action, Context);
 
 process(?METHOD_POST, ?CONTENT_TYPE_FORM_URLENCODED, ?CONTENT_TYPE_HTML, Context) ->
   Title = todow_http:get_query(<<"title">>, Context, <<"unknown">>),
   {<<"Your new task is ", Title/binary>>, Context};
 
 process(?METHOD_PATCH, ?CONTENT_TYPE_FORM_URLENCODED, ?CONTENT_TYPE_HTML, Context) ->
-  z_render:growl(<<"Ok"/utf8>>, Context).
+  % z_render:growl(<<"Ok"/utf8>>, Context).
+  Title = todow_http:get_query(<<"title">>, Context, <<"unknown">>),
+  {<<"Your task updated to ", Title/binary>>, Context}.
 
-render(Id, Context) ->
-  Vars = [
-    {resource_id, Id},
-    {form_method, get_method(Id)},
-    {form_url, ?URL}
-  ],
-  todow_controller:render(?TEMPLATE, Vars, Context).
+%%====================================================================
+%% Internal functions
+%%====================================================================
 
-get_method(undefined) -> ?METHOD_POST;
-get_method(_Id) -> ?METHOD_PATCH.
+%% @doc render
+
+render(index = Action, Context) ->
+  do_render(?TEMPLATE_INDEX, Action, Context);
+
+render(edit = Action, Context) ->
+  Id = todow_http:get_query(id, Context),
+  FormAction = todow_router:url_todos(),
+  Vars = [ {id, Id}, {form_method, ?METHOD_PATCH}, {form_action, FormAction} ],
+  do_render(?TEMPLATE_NEW_OR_EDIT, Action, Context, Vars);
+
+render(new = Action, Context) ->
+  FormAction = todow_router:url_todos(),
+  Vars = [ {form_method, ?METHOD_POST}, {form_action, FormAction} ],
+  do_render(?TEMPLATE_NEW_OR_EDIT, Action, Context, Vars);
+
+render(show = Action, Context) ->
+  Id = todow_http:get_query(id, Context),
+  Vars = [ {id, Id} ],
+  do_render(?TEMPLATE_SHOW, Action, Context, Vars).
+
+%% @doc do_render
+
+do_render(Template, Action, Context) ->
+  do_render(Template, Action, Context, []).
+
+do_render(Template, Action, Context, Vars0) ->
+  Vars = [ [ {action, Action} ] | Vars0 ],
+  todow_controller:render(Template, Vars, Context).
