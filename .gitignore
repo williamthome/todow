@@ -7,3 +7,7 @@ zotonic_site.config
 *.plt
 *~
 *#
+_build
+data.nonode@nohost
+log
+log.nonode@nohost
