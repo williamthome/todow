@@ -2,6 +2,14 @@
 
 -export([ get_query/2, get_multiple_query/2 ]).
 
+get_query({Param, Validations}, Context) ->
+  {ok, Value} = do_get_query(Param, Context),
+  MaybeInt = todow_convert_utils:maybe_to_integer(Value),
+  case todow_validation:validate({Param, MaybeInt}, Validations) of
+    {ok, _Key} -> {ok, Value};
+    Error -> Error
+  end;
+
 get_query(Param, Context) ->
   do_get_query(Param, Context).
 
@@ -15,4 +23,4 @@ do_get_query(Param, Context) ->
   do_get_query(Param, Context, undefined).
 
 do_get_query(Param, Context, Default) ->
-  z_context:get_q(Param, Context, Default).
+  {ok, z_context:get_q(Param, Context, Default)}.

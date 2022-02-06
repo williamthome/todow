@@ -24,12 +24,12 @@ process(?METHOD_GET, undefined, ?CONTENT_TYPE_HTML, Context) ->
   render(Action, Context);
 
 process(?METHOD_POST, ?CONTENT_TYPE_FORM_URLENCODED, ?CONTENT_TYPE_HTML, Context) ->
-  Title = todow_http:get_query(<<"title">>, Context, <<"unknown">>),
+  {ok, Title} = todow_http:get_query(<<"title">>, Context, <<"unknown">>),
   {<<"Your new task is ", Title/binary>>, Context};
 
 process(?METHOD_PATCH, ?CONTENT_TYPE_FORM_URLENCODED, ?CONTENT_TYPE_HTML, Context) ->
   % z_render:growl(<<"Ok"/utf8>>, Context).
-  Title = todow_http:get_query(<<"title">>, Context, <<"unknown">>),
+  {ok, Title} = todow_http:get_query(<<"title">>, Context, <<"unknown">>),
   {<<"Your task updated to ", Title/binary>>, Context}.
 
 %%====================================================================
@@ -42,10 +42,14 @@ render(index = Action, Context) ->
   do_render(?TEMPLATE_INDEX, Action, Context);
 
 render(edit = Action, Context) ->
-  Id = todow_http:get_query(id, Context),
-  FormAction = todow_router:url_todos(),
-  Vars = [ {id, Id}, {form_method, ?METHOD_PATCH}, {form_action, FormAction} ],
-  do_render(?TEMPLATE_NEW_OR_EDIT, Action, Context, Vars);
+  case todow_http:get_query({id, [validate_is_integer]}, Context) of
+    {ok, Id} ->
+      FormAction = todow_router:url_todos(),
+      Vars = [ {id, Id}, {form_method, ?METHOD_PATCH}, {form_action, FormAction} ],
+      do_render(?TEMPLATE_NEW_OR_EDIT, Action, Context, Vars);
+    _Error ->
+      todow_controller:render_not_found(Context)
+  end;
 
 render(new = Action, Context) ->
   FormAction = todow_router:url_todos(),
@@ -53,9 +57,13 @@ render(new = Action, Context) ->
   do_render(?TEMPLATE_NEW_OR_EDIT, Action, Context, Vars);
 
 render(show = Action, Context) ->
-  Id = todow_http:get_query(id, Context),
-  Vars = [ {id, Id} ],
-  do_render(?TEMPLATE_SHOW, Action, Context, Vars).
+  case todow_http:get_query({id, [validate_is_integer]}, Context) of
+    {ok, Id} ->
+      Vars = [ {id, Id} ],
+      do_render(?TEMPLATE_SHOW, Action, Context, Vars);
+    _Error ->
+      todow_controller:render_not_found(Context)
+  end.
 
 %% @doc do_render
 

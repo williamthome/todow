@@ -2,14 +2,12 @@
 
 -export([
   validate_required/1, validate_required/2,
-  validate_number/2
+  validate_number/2,
+  validate_is_integer/1, validate_is_integer/2
 ]).
 -export([ validate/1, validate/2 ]).
 
 %% @doc validate_required
-
-validate_required(Value) ->
-  validate_required(Value, #{}).
 
 validate_required(Value, #{})
   when Value =/= undefined
@@ -20,6 +18,8 @@ validate_required(Value, #{})
 validate_required(_, _) ->
   {error, required}.
 
+validate_required(Value) ->
+  validate_required(Value, #{}).
 
 %% @doc validate_number
 
@@ -29,6 +29,17 @@ validate_number(Value, #{range := {Min, Max}})
 
 validate_number(_, #{range := {Min, Max}}) ->
   {error, {range, {Min, Max}}}.
+
+%% @doc validate_is_integer
+
+validate_is_integer(Value) when is_integer(Value) ->
+  ok;
+
+validate_is_integer(_Value) ->
+  {error, not_integer}.
+
+validate_is_integer(Value, #{}) ->
+  validate_is_integer(Value).
 
 %% @doc validate
 
