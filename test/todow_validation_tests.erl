@@ -22,10 +22,15 @@ validate_number_test() ->
 validate_test() ->
   ?assertEqual({error, required}, validate(undefined, [validate_required])),
   ?assertEqual({error, required}, validate("", [{validate_required, #{}}])),
+
   ?assertEqual({error, required}, validate(<<>>, [{todow_validation, validate_required}])),
   ?assertEqual(ok, validate(ok, [{todow_validation, validate_required, #{}}])),
+
   ?assertEqual({error, {foo, {range, {0, 1}}}}, validate({foo, -1}, [ validate_required, {validate_number, #{range => {0, 1}}} ])),
-  ?assertEqual({ok, foo}, validate({foo, 1}, [ validate_required, {validate_number, #{range => {0, 1}}} ])).
+  ?assertEqual({ok, foo}, validate({foo, 1}, [ validate_required, {validate_number, #{range => {0, 1}}} ])),
+
+  ?assertEqual({error, required}, validate(undefined, [fun todow_validation:validate_required/2])),
+  ?assertEqual({error, required}, validate("", [{fun todow_validation:validate_required/2, #{}}])).
 
 validate_multiple_test() ->
   ?assertEqual(#{errors => [{foo, required}], valid => false}, validate([{{foo, undefined}, [validate_required]}])),

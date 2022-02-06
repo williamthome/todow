@@ -6,6 +6,8 @@
 ]).
 -export([ validate/1, validate/2 ]).
 
+%% @doc validate_required
+
 validate_required(Value) ->
   validate_required(Value, #{}).
 
@@ -18,12 +20,17 @@ validate_required(Value, #{})
 validate_required(_, _) ->
   {error, required}.
 
+
+%% @doc validate_number
+
 validate_number(Value, #{range := {Min, Max}})
   when Value >= Min andalso Value =< Max ->
   ok;
 
 validate_number(_, #{range := {Min, Max}}) ->
   {error, {range, {Min, Max}}}.
+
+%% @doc validate
 
 validate({Key, Value}, Validations) ->
   case validate(Value, Validations) of
@@ -56,6 +63,14 @@ validate(ToValidate) when is_list(ToValidate) ->
 do_validate(Value, [Function | Validations], ok)
   when is_atom(Function) ->
   do_validate(Value, [{Function, #{}} | Validations], ok);
+
+do_validate(Value, [Function | Validations], ok)
+  when is_function(Function, 2) ->
+  do_validate(Value, [{Function, #{}} | Validations], ok);
+
+do_validate(Value, [{Function, Args} | Validations], ok)
+  when is_function(Function, 2) andalso is_map(Args) ->
+  do_validate(Value, Validations, Function(Value, Args));
 
 do_validate(Value, [{Function, Args} | Validations], ok)
   when is_atom(Function) andalso is_map(Args) ->
