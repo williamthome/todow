@@ -22,7 +22,7 @@
       unique => unique_baz
     }
   ],
-  timestamp => true
+  timestamps => true
 }).
 
 my_function() -> ok.
