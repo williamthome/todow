@@ -1,5 +1,5 @@
 -module(myschema).
--compile([{parse_transform, meta_schema}]).
+-include("../include/schema.hrl").
 -export([ my_function/0 ]).
 
 -schema(#{
