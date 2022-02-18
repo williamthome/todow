@@ -1,5 +1,6 @@
 -module(myschema).
 -compile([{parse_transform, meta_schema}]).
+-export([ my_function/0 ]).
 
 -schema(#{
   table => foo,
@@ -23,3 +24,5 @@
   ],
   timestamp => true
 }).
+
+my_function() -> ok.
