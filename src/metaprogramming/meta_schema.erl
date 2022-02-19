@@ -46,14 +46,14 @@ do_transform(_Type, Form, _Context, State) ->
 do_schema_functions(Table, Fields) when is_atom(Table) andalso is_list(Fields) ->
   [
     #function{
-      name = fetch_table,
+      name = table,
       arity = 0,
-      form = ?Q("fetch_table() -> _@Table@.")
+      form = ?Q("table() -> _@Table@.")
     },
     #function{
-      name = fetch_fields,
+      name = fields,
       arity = 0,
-      form = ?Q("fetch_fields() -> _@Fields@.")
+      form = ?Q("fields() -> _@Fields@.")
     }
   ].
 
