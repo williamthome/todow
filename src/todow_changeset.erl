@@ -1,5 +1,9 @@
 -module(todow_changeset).
 
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
+
 -type action() :: new | update | undefined.
 
 -record(changeset, {
@@ -129,3 +133,15 @@ set_change(Changeset, Key, Value) ->
 maybe_set_change(Changeset, _Key, NewValue, NewValue) -> Changeset;
 maybe_set_change(Changeset, Key, _OldValue, NewValue) ->
   set_change(Changeset, Key, NewValue).
+
+%%====================================================================
+%% Tests
+%%====================================================================
+
+-ifdef(TEST).
+
+guess_action_test() ->
+  ?assertEqual(new, guess_action(#{})),
+  ?assertEqual(update, guess_action(#{foo => bar})).
+
+-endif.
