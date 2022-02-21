@@ -132,7 +132,7 @@ set_change(Changeset, Key, Value) ->
     data = Data
   }.
 
-maybe_set_change(Changeset, _Key, NewValue, NewValue) -> Changeset;
+maybe_set_change(Changeset, _Key, OldValue, OldValue) -> Changeset;
 maybe_set_change(Changeset, Key, _OldValue, NewValue) ->
   set_change(Changeset, Key, NewValue).
 
