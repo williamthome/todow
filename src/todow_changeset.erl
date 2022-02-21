@@ -117,7 +117,9 @@ guess_action(Data) when map_size(Data) == 0 -> new;
 guess_action(_Data) -> update.
 
 maybe_merge_defaults(new, Changes, Defaults) -> maps:merge(Defaults, Changes);
-maybe_merge_defaults(update, Changes, _Defaults) -> Changes.
+maybe_merge_defaults(update, Changes, _Defaults) -> Changes;
+maybe_merge_defaults(Data, Changes, Defaults) ->
+  maybe_merge_defaults(guess_action(Data), Changes, Defaults).
 
 maybe_default(Key, undefined, Defaults) -> maps:get(Key, Defaults, undefined);
 maybe_default(_Key, Value, _Defaults) -> Value.
@@ -143,5 +145,11 @@ maybe_set_change(Changeset, Key, _OldValue, NewValue) ->
 guess_action_test() ->
   ?assertEqual(new, guess_action(#{})),
   ?assertEqual(update, guess_action(#{foo => bar})).
+
+maybe_merge_defaults_test() ->
+  ?assertEqual(#{foo => bar}, maybe_merge_defaults(new, #{}, #{foo => bar})),
+  ?assertEqual(#{foo => bar}, maybe_merge_defaults(#{}, #{}, #{foo => bar})),
+  ?assertEqual(#{foo => bar}, maybe_merge_defaults(update, #{foo => bar}, #{})),
+  ?assertEqual(#{foo => bar}, maybe_merge_defaults(#{foo => foo}, #{foo => bar}, #{})).
 
 -endif.
