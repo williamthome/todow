@@ -152,4 +152,8 @@ maybe_merge_defaults_test() ->
   ?assertEqual(#{foo => bar}, maybe_merge_defaults(update, #{foo => bar}, #{})),
   ?assertEqual(#{foo => bar}, maybe_merge_defaults(#{foo => foo}, #{foo => bar}, #{})).
 
+maybe_default_test() ->
+  ?assertEqual(bar, maybe_default(foo, undefined, #{foo => bar})),
+  ?assertEqual(bar, maybe_default(foo, bar, #{foo => foo})).
+
 -endif.
