@@ -77,13 +77,15 @@ get_action(#changeset{action = Action}) -> Action.
 
 set_action(Changeset, Action) -> Changeset#changeset{action = Action}.
 
--spec cast(Data :: map(), Changes :: map(), ValidKeys :: list()) -> changeset().
+-spec cast(
+  Data :: map(), Changes :: map(), ValidKeys :: list()
+) -> {ok, changeset()}.
 
 cast(Data, Changes, ValidKeys) -> cast(Data, Changes, ValidKeys, #{}).
 
 -spec cast(
   Data :: map(), Changes :: map(), ValidKeys :: list(), Options :: map()
-) -> changeset().
+) -> {ok, changeset()}.
 
 cast(Data, Changes, ValidKeys, Options)
   when is_map(Changes)
@@ -96,7 +98,7 @@ cast(Data, Changes, ValidKeys, Options)
         case lists:member(Key, ValidKeys) of
           true ->
             OldValue = maps:get(Key, Data, undefined),
-            NewValue = maybe_default(Key, Value, Defaults),
+            NewValue = todow_utils:maybe_default(Key, Value, Defaults),
             maybe_set_change(ChangesetAcc, Key, OldValue, NewValue);
           false -> ChangesetAcc
         end
@@ -113,16 +115,21 @@ cast(Data, Changes, ValidKeys, Options)
 %% Internal functions
 %%====================================================================
 
+-spec guess_action(Data :: map()) -> new | update.
+
 guess_action(Data) when map_size(Data) == 0 -> new;
-guess_action(_Data) -> update.
+guess_action(Data) when is_map(Data) -> update.
+
+-spec maybe_merge_defaults(
+  ActionOrData :: new | update, Changes :: map(), Defaults :: map()
+) -> map().
 
 maybe_merge_defaults(new, Changes, Defaults) -> maps:merge(Defaults, Changes);
-maybe_merge_defaults(update, Changes, _Defaults) -> Changes;
-maybe_merge_defaults(Data, Changes, Defaults) ->
-  maybe_merge_defaults(guess_action(Data), Changes, Defaults).
+maybe_merge_defaults(update, Changes, _Defaults) -> Changes.
 
-maybe_default(Key, undefined, Defaults) -> maps:get(Key, Defaults, undefined);
-maybe_default(_Key, Value, _Defaults) -> Value.
+-spec set_change(
+  Changeset :: changeset(), Key :: any(), Value :: any()
+) -> changeset().
 
 set_change(Changeset, Key, Value) ->
   Changes = maps:put(Key, Value, get_changes(Changeset)),
@@ -131,6 +138,10 @@ set_change(Changeset, Key, Value) ->
     changes = Changes,
     data = Data
   }.
+
+-spec maybe_set_change(
+  Changeset :: changeset(), Key :: any(), OldValue :: any(), NewValue :: any()
+) -> changeset().
 
 maybe_set_change(Changeset, _Key, OldValue, OldValue) -> Changeset;
 maybe_set_change(Changeset, Key, _OldValue, NewValue) ->
@@ -151,10 +162,6 @@ maybe_merge_defaults_test() ->
   ?assertEqual(#{foo => bar}, maybe_merge_defaults(#{}, #{}, #{foo => bar})),
   ?assertEqual(#{foo => bar}, maybe_merge_defaults(update, #{foo => bar}, #{})),
   ?assertEqual(#{foo => bar}, maybe_merge_defaults(#{foo => foo}, #{foo => bar}, #{})).
-
-maybe_default_test() ->
-  ?assertEqual(bar, maybe_default(foo, undefined, #{foo => bar})),
-  ?assertEqual(bar, maybe_default(foo, bar, #{foo => foo})).
 
 set_change_test() ->
   ?assertEqual(
