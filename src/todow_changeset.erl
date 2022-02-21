@@ -156,4 +156,10 @@ maybe_default_test() ->
   ?assertEqual(bar, maybe_default(foo, undefined, #{foo => bar})),
   ?assertEqual(bar, maybe_default(foo, bar, #{foo => foo})).
 
+set_change_test() ->
+  ?assertEqual(
+    #changeset{data = #{foo => bar}, changes = #{foo => bar}},
+    set_change(#changeset{}, foo, bar)
+  ).
+
 -endif.
