@@ -71,6 +71,8 @@
         mod_video,
         mod_oembed,
 
-        mod_development
+        mod_development,
+
+        mod_ssl_ca
     ]}
 ].
