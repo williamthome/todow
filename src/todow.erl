@@ -60,5 +60,6 @@ observe_acl_is_allowed(#acl_is_allowed{}, _Context) ->
     ok.
 
 event(#postback{message = world}, Context) ->
-    ?DEBUG(world),
+    z_mqtt:publish(<<"public/hello">>, <<>>, Context),
+    ?DEBUG("Check the browser console o/"),
     Context.
