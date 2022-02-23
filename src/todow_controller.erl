@@ -5,7 +5,8 @@
 -export([ render/2, render/3, render_not_found/1 ]).
 
 render(FileName, Vars, Context) ->
-  z_template:render_to_iolist(FileName, Vars, Context).
+  Html = z_template:render(FileName, Vars, Context),
+  z_context:output(Html, Context).
 
 render(FileName, Context) ->
   render(FileName, [], Context).

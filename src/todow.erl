@@ -30,7 +30,8 @@
 -export([ observe_acl_is_allowed/2 ]).
 
 -export([
-    'mqtt:test/#'/2
+    'mqtt:test/#'/2,
+    event/2
 ]).
 
 %%====================================================================
@@ -57,3 +58,7 @@ observe_acl_is_allowed(#acl_is_allowed{}, _Context) ->
 'mqtt:test/#'(Message, Context) ->
     io:format("mqtt:test on site ~p received ~p\n", [ z_context:site(Context), Message ]),
     ok.
+
+event(#postback{message = world}, Context) ->
+    ?DEBUG(world),
+    Context.
