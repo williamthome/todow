@@ -9,7 +9,9 @@
   quote/1, not_quote/1, maybe_quote/1,
   strip/1,
   prepend_symbol/1, replace_symbol/3,
-  format/2
+  format/1, format/2,
+  format_sql/1, format_sql/2,
+  join_sqls/1
 ]).
 
 -define(should_quote(Value), is_list(Value) orelse is_binary(Value)).
@@ -58,6 +60,12 @@ prepend_symbol(Index) when is_integer(Index) andalso Index >= 1 ->
 replace_symbol(Sql, Index, Param) when is_list(Sql) andalso is_integer(Index) ->
   lists:concat(string:replace(Sql, prepend_symbol(Index), maybe_quote(Param), all)).
 
+-spec format(Sql :: string() | {string(), list()}) -> string().
+
+format({Sql, Params}) -> format(Sql, Params);
+
+format(Sql) -> format(Sql, []).
+
 -spec format(Sql :: string(), Params :: list()) -> string().
 
 format(Sql, Params) ->
@@ -70,6 +78,31 @@ format(Sql, Params) ->
     Params
   ),
   FormattedSql.
+
+-spec format_sql(Sql :: string() | {string(), list()}) -> string().
+
+format_sql({Sql, Params}) -> format_sql(Sql, Params);
+
+format_sql(Sql) -> format_sql(Sql, []).
+
+-spec format_sql(Sql :: string(), Params :: list()) -> string().
+
+format_sql(Sql, Params) -> format(Sql, Params) ++ ";".
+
+-spec join_sqls(Sqls :: list(string() | {string(), list()})) -> string().
+
+join_sqls(Sqls) -> do_join_sqls(Sqls, []).
+
+%%====================================================================
+%% Internal functions
+%%====================================================================
+
+do_join_sqls([], Acc) -> Acc;
+
+do_join_sqls([LastSql], Acc) -> Acc ++ format(LastSql) ++ ";";
+
+do_join_sqls([Sql | Sqls], Acc) ->
+   do_join_sqls(Sqls, Acc ++ format(Sql) ++ " ").
 
 %%====================================================================
 %% Tests
@@ -107,6 +140,35 @@ format_test() ->
     format(
       "   SELECT  *     FROM  \r\n  $1 WHERE $2 = $3 \n  ",
       [foo, bar, "baz"]
+    )
+  ).
+
+format_sql_test() ->
+  % format_sql/1
+  ?assertEqual(
+    "SELECT * FROM foo WHERE bar = 'baz';",
+    format_sql(
+      "   SELECT  *     FROM  \r\n  foo WHERE bar = 'baz' \n  "
+    )
+  ),
+  % format_sql/2
+  ?assertEqual(
+    "SELECT * FROM foo WHERE bar = 'baz';",
+    format_sql(
+      "   SELECT  *     FROM  \r\n  $1 WHERE $2 = $3 \n  ",
+      [foo, bar, "baz"]
+    )
+  ).
+
+join_sqls_test() ->
+  ?assertEqual(
+    "SELECT * FROM foo WHERE bar = 'baz';",
+    join_sqls(
+      [
+        "   SELECT  *     ",
+        "   FROM  \r\n  foo  ",
+        "      WHERE bar = 'baz' \n  "
+      ]
     )
   ).
 
