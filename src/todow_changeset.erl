@@ -159,9 +159,7 @@ guess_action_test() ->
 
 maybe_merge_defaults_test() ->
   ?assertEqual(#{foo => bar}, maybe_merge_defaults(new, #{}, #{foo => bar})),
-  ?assertEqual(#{foo => bar}, maybe_merge_defaults(#{}, #{}, #{foo => bar})),
-  ?assertEqual(#{foo => bar}, maybe_merge_defaults(update, #{foo => bar}, #{})),
-  ?assertEqual(#{foo => bar}, maybe_merge_defaults(#{foo => foo}, #{foo => bar}, #{})).
+  ?assertEqual(#{foo => bar}, maybe_merge_defaults(update, #{foo => bar}, #{})).
 
 set_change_test() ->
   ?assertEqual(
