@@ -7,6 +7,11 @@
   maybe_to_string/1
 ]).
 
+-type not_integer() :: {error, not_integer}.
+-type not_string() :: {error, not_string}.
+
+-export_type([ not_integer/0, not_string/0 ]).
+
 -define(NOT_INTEGER_ERROR, {error, not_integer}).
 -define(NOT_STRING_ERROR, {error, not_string}).
 
@@ -37,7 +42,10 @@ maybe_to_integer(Value) ->
 -spec to_string(Value :: any()) -> {ok, string()} | {error, not_string}.
 
 to_string(Value) when is_list(Value) ->
-    {ok, Value};
+  case io_lib:deep_latin1_char_list(Value) of
+    true -> {ok, Value};
+    false -> ?NOT_STRING_ERROR
+  end;
 to_string(Value) when is_integer(Value) ->
   try
     {ok, erlang:integer_to_list(Value)}
