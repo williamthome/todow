@@ -2,6 +2,8 @@
 
 -export([ get_query/2, get_query/3, get_multiple_query/2 ]).
 
+% TODO: Get query without zotonic context and test
+
 get_query(Param, Context) ->
   get_query(Param, Context, #{}).
 

@@ -12,8 +12,6 @@
 
 -define(should_quote(Value), is_list(Value) orelse is_binary(Value)).
 
-% TODO: Get query without zotonic context and test
-
 query(Sql, Args) -> z_db:equery(Sql, Args, todow:context()).
 query(Sql) -> query(Sql, []).
 
