@@ -28,8 +28,6 @@ parse_transform(Forms, Options) ->
     Options
   ),
 
-  io:format("State: ~p\n", [State]),
-
   Forms2 = do_state_forms(State, Forms1),
 
   parse_trans:revert(Forms2).
