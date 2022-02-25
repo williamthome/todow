@@ -1,13 +1,12 @@
 -module(todow_db_test).
 
 -import(todow_db, [
-  query/1, query/2,
   quote/1, not_quote/1, maybe_quote/1,
   strip/1,
   prepend_symbol/1, replace_symbol/3,
   format/1, format/2,
-  format_sql/1, format_sql/2,
-  join_sqls/1
+  format_query/1, format_query/2,
+  reformat_query/1
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -45,27 +44,27 @@ format_test() ->
     )
   ).
 
-format_sql_test() ->
-  % format_sql/1
+format_query_test() ->
+  % format_query/1
   ?assertEqual(
     "SELECT * FROM foo WHERE bar = 'baz';",
-    format_sql(
+    format_query(
       "   SELECT  *     FROM  \r\n  foo WHERE bar = 'baz' \n  "
     )
   ),
-  % format_sql/2
+  % format_query/2
   ?assertEqual(
     "SELECT * FROM foo WHERE bar = 'baz';",
-    format_sql(
+    format_query(
       "   SELECT  *     FROM  \r\n  $1 WHERE $2 = $3 \n  ",
       [foo, bar, "baz"]
     )
   ).
 
-join_sqls_test() ->
+reformat_query_test() ->
   ?assertEqual(
     "SELECT * FROM foo WHERE bar = 'baz';",
-    join_sqls(
+    reformat_query(
       [
         "   SELECT  *     ",
         "   FROM  \r\n  foo  ",

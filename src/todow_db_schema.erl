@@ -15,7 +15,7 @@ recreate_tables() ->
   create_tables().
 
 create_table_todos() ->
-  todow_db:query("
+  todow_db:equery("
     CREATE TABLE IF NOT EXISTS todow.todos (
       id SERIAL NOT NULL PRIMARY KEY,
       title TEXT,
@@ -27,4 +27,4 @@ create_table_todos() ->
   ").
 
 drop_table_todos() ->
-  todow_db:query("DROP TABLE IF EXISTS todow.todos").
+  todow_db:equery("DROP TABLE IF EXISTS todow.todos").

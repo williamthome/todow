@@ -1,19 +1,19 @@
 -module(todow_db).
 
 -export([
-  query/1, query/2,
+  equery/1, equery/2,
   quote/1, not_quote/1, maybe_quote/1,
   strip/1,
   prepend_symbol/1, replace_symbol/3,
   format/1, format/2,
-  format_sql/1, format_sql/2,
-  join_sqls/1
+  format_query/1, format_query/2,
+  reformat_query/1
 ]).
 
 -define(should_quote(Value), is_list(Value) orelse is_binary(Value)).
 
-query(Sql, Args) -> z_db:equery(Sql, Args, todow:context()).
-query(Sql) -> query(Sql, []).
+equery(Query, Args) -> z_db:equery(Query, Args, todow:context()).
+equery(Query) -> equery(Query, []).
 
 -spec quote(Value :: any()) -> {ok, string()} | todow_convert_utils:not_string().
 
@@ -51,51 +51,53 @@ strip(String) ->
 prepend_symbol(Index) when is_integer(Index) andalso Index >= 1 ->
   lists:concat(["$", Index]).
 
--spec replace_symbol(Sql :: string(), Index :: integer(), Param :: any()) -> string().
+-spec replace_symbol(Query :: string(), Index :: integer(), Param :: any()) -> string().
 
-replace_symbol(Sql, Index, Param) when is_list(Sql) andalso is_integer(Index) ->
-  lists:concat(string:replace(Sql, prepend_symbol(Index), maybe_quote(Param), all)).
+replace_symbol(Query, Index, Param) when is_list(Query) andalso is_integer(Index) ->
+  lists:concat(string:replace(Query, prepend_symbol(Index), maybe_quote(Param), all)).
 
--spec format(Sql :: string() | {string(), list()}) -> string().
+-spec format(Query :: string() | {string(), list()}) -> string().
 
-format({Sql, Params}) -> format(Sql, Params);
+format({Query, Params}) -> format(Query, Params);
 
-format(Sql) -> format(Sql, []).
+format(Query) -> format(Query, []).
 
--spec format(Sql :: string(), Params :: list()) -> string().
+-spec format(Query :: string(), Params :: list()) -> string().
 
-format(Sql, Params) ->
-  StrippedSql = strip(Sql),
-  {FormattedSql, _Index} = lists:foldl(
-    fun(Param, {SqlAcc, Index}) ->
-      {replace_symbol(SqlAcc, Index, Param), Index + 1}
+format(Query, Params) ->
+  StrippedQuery = strip(Query),
+  {FormattedQuery, _Index} = lists:foldl(
+    fun(Param, {QueryAcc, Index}) ->
+      {replace_symbol(QueryAcc, Index, Param), Index + 1}
     end,
-    {StrippedSql, 1},
+    {StrippedQuery, 1},
     Params
   ),
-  FormattedSql.
+  FormattedQuery.
 
--spec format_sql(Sql :: string() | {string(), list()}) -> string().
+-spec format_query(Query :: string() | {string(), list()}) -> string().
 
-format_sql({Sql, Params}) -> format_sql(Sql, Params);
+format_query({Query, Params}) -> format_query(Query, Params);
 
-format_sql(Sql) -> format_sql(Sql, []).
+format_query(Query) -> format_query(Query, []).
 
--spec format_sql(Sql :: string(), Params :: list()) -> string().
+-spec format_query(Query :: string(), Params :: list()) -> string().
 
-format_sql(Sql, Params) -> format(Sql, Params) ++ ";".
+format_query(Query, Params) -> format(Query, Params) ++ ";".
 
--spec join_sqls(Sqls :: list(string() | {string(), list()})) -> string().
+%% @doc Reduce and format multiple queries to a single one
 
-join_sqls(Sqls) -> do_join_sqls(Sqls, []).
+-spec reformat_query(Queries :: list(string() | {string(), list()})) -> string().
+
+reformat_query(Queries) -> do_reformat_query(Queries, []).
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 
-do_join_sqls([], Acc) -> Acc;
+do_reformat_query([], Acc) -> Acc;
 
-do_join_sqls([LastSql], Acc) -> Acc ++ format(LastSql) ++ ";";
+do_reformat_query([LastQuery], Acc) -> Acc ++ format(LastQuery) ++ ";";
 
-do_join_sqls([Sql | Sqls], Acc) ->
-   do_join_sqls(Sqls, Acc ++ format(Sql) ++ " ").
+do_reformat_query([Query | Queries], Acc) ->
+   do_reformat_query(Queries, Acc ++ format(Query) ++ " ").
