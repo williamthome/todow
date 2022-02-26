@@ -25,7 +25,7 @@
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
--export([ context/0 ]).
+-export([ context/0, sudo_context/0 ]).
 -export([ manage_schema/2 ]).
 -export([ observe_acl_is_allowed/2 ]).
 
@@ -39,6 +39,8 @@
 %%====================================================================
 
 context() -> z:c(todow).
+
+sudo_context() -> z_acl:sudo(context()).
 
 manage_schema(_Version, _Context) ->
     todow_db_schema:create_tables(),
