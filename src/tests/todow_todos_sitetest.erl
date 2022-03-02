@@ -48,8 +48,11 @@ test_insert(#{schema := Schema}) ->
 %%--------------------------------------------------------------------
 
 assertEqual(Title, Expected, Result) ->
+  a(Title, ?_assertEqual(Expected, Result)).
+
+a(Title, Assert) ->
   case ?run of
-    true -> {Title, ?_assertEqual(Expected, Result)};
+    true -> {Title, Assert};
     false -> {Title, skip_assert()}
   end.
 
