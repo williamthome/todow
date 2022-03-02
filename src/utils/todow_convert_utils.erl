@@ -3,8 +3,10 @@
 -export([
   to_integer/1,
   maybe_to_integer/1,
+  must_to_integer/1, must_to_integer_mult/1,
   to_string/1,
-  maybe_to_string/1
+  maybe_to_string/1,
+  must_to_string/1, must_to_string_mult/1
 ]).
 
 -type not_integer() :: {error, not_integer}.
@@ -38,6 +40,17 @@ maybe_to_integer(Value) ->
     {ok, Integer} -> Integer;
     _ -> Value
   end.
+
+-spec must_to_integer(Value :: any()) -> integer().
+
+must_to_integer(Value) ->
+  {ok, Integer} = to_integer(Value),
+  Integer.
+
+-spec must_to_integer_mult(List :: list()) -> list(integer()).
+
+must_to_integer_mult(List) ->
+  [must_to_integer(Value) || Value <- List].
 
 -spec to_string(Value :: any()) -> {ok, string()} | {error, not_string}.
 
@@ -103,3 +116,14 @@ maybe_to_string(Value) ->
     {ok, String} -> String;
     _ -> Value
   end.
+
+-spec must_to_string(Value :: any()) -> string().
+
+must_to_string(Value) ->
+  {ok, String} = to_string(Value),
+  String.
+
+-spec must_to_string_mult(List :: list()) -> list(string()).
+
+must_to_string_mult(List) ->
+  [must_to_string(Value) || Value <- List].
