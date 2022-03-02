@@ -1,5 +1,7 @@
 -module(todow_todos_sitetest).
 
+-dialyzer([no_return, no_match]).
+
 -include_lib("eunit/include/eunit.hrl").
 
 -define(run, is_pid(whereis(zotonic_launcher_sup))).
