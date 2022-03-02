@@ -26,7 +26,7 @@
 -include_lib("zotonic_core/include/zotonic.hrl").
 
 -export([ context/0, sudo_context/0 ]).
--export([ manage_schema/2 ]).
+-export([ manage_schema/2, manage_data/2 ]).
 -export([ observe_acl_is_allowed/2 ]).
 
 -export([
@@ -42,14 +42,11 @@ context() -> z:c(todow).
 
 sudo_context() -> z_acl:sudo(context()).
 
-manage_schema(_Version, _Context) ->
+manage_schema(install, _Context) ->
     todow_db_schema:create_tables(),
+    ok.
 
-    #datamodel{
-        resources = [],
-        media = [],
-        edges = []
-    }.
+manage_data(_Version, _Context) -> ok.
 
 observe_acl_is_allowed(#acl_is_allowed{object = #acl_mqtt{topic = _Topic}}, _Context) ->
     %% Allow anonymous access on this topic
