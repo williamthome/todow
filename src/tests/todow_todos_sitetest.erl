@@ -4,6 +4,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+%% TODO: Start Zotonic before eunit tests and remove the ?run flag from asserts.
 -define(run, is_pid(whereis(zotonic_launcher_sup))).
 
 %%--------------------------------------------------------------------
