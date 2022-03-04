@@ -11,9 +11,9 @@
   changes = maps:new() :: map(),
   action :: action()
 }).
--opaque changeset() :: #changeset{}.
+-opaque t() :: #changeset{}.
 
--export_type([ changeset/0, action/0 ]).
+-export_type([ t/0, action/0 ]).
 
 -export([
   new/2, new/3,
@@ -30,12 +30,12 @@
 %% Api
 %%====================================================================
 
--spec new(Data :: map(), Changes :: map()) -> {ok, changeset()}.
+-spec new(Data :: map(), Changes :: map()) -> {ok, t()}.
 
 new(Data, Changes) ->
   new(Data, Changes, guess_action(Data)).
 
--spec new(Data :: map(), Changes :: map(), Action :: action()) -> {ok, changeset()}.
+-spec new(Data :: map(), Changes :: map(), Action :: action()) -> {ok, t()}.
 
 new(Data, Changes, Action) ->
   Changeset = #changeset{
@@ -50,42 +50,42 @@ new(Data, Changes, Action) ->
 is_changeset(Unknown) when is_record(Unknown, changeset) -> true;
 is_changeset(_Unknown) -> false.
 
--spec get_changes(Changeset :: changeset()) -> map().
+-spec get_changes(Changeset :: t()) -> map().
 
 get_changes(undefined) -> undefined;
 get_changes(#changeset{changes = Changes}) -> Changes.
 
--spec set_changes(Changeset :: changeset(), Changes :: map()) ->  changeset().
+-spec set_changes(Changeset :: t(), Changes :: map()) ->  t().
 
 set_changes(Changeset, Changes) -> Changeset#changeset{changes = Changes}.
 
--spec get_data(Changeset :: changeset()) -> map().
+-spec get_data(Changeset :: t()) -> map().
 
 get_data(undefined) -> undefined;
 get_data(#changeset{data = Data}) -> Data.
 
--spec set_data(Changeset :: changeset(), Data :: map()) ->  changeset().
+-spec set_data(Changeset :: t(), Data :: map()) ->  t().
 
 set_data(Changeset, Data) -> Changeset#changeset{data = Data}.
 
--spec get_action(Changeset :: changeset()) -> action().
+-spec get_action(Changeset :: t()) -> action().
 
 get_action(undefined) -> undefined;
 get_action(#changeset{action = Action}) -> Action.
 
--spec set_action(Changeset :: changeset(), Action :: action()) ->  changeset().
+-spec set_action(Changeset :: t(), Action :: action()) ->  t().
 
 set_action(Changeset, Action) -> Changeset#changeset{action = Action}.
 
 -spec cast(
   Data :: map(), Changes :: map(), ValidKeys :: list()
-) -> {ok, changeset()}.
+) -> {ok, t()}.
 
 cast(Data, Changes, ValidKeys) -> cast(Data, Changes, ValidKeys, #{}).
 
 -spec cast(
   Data :: map(), Changes :: map(), ValidKeys :: list(), Options :: map()
-) -> {ok, changeset()}.
+) -> {ok, t()}.
 
 cast(Data, Changes, ValidKeys, Options)
   when is_map(Changes)
@@ -128,8 +128,8 @@ maybe_merge_defaults(new, Changes, Defaults) -> maps:merge(Defaults, Changes);
 maybe_merge_defaults(update, Changes, _Defaults) -> Changes.
 
 -spec set_change(
-  Changeset :: changeset(), Key :: any(), Value :: any()
-) -> changeset().
+  Changeset :: t(), Key :: any(), Value :: any()
+) -> t().
 
 set_change(Changeset, Key, Value) ->
   Changes = maps:put(Key, Value, get_changes(Changeset)),
@@ -140,8 +140,8 @@ set_change(Changeset, Key, Value) ->
   }.
 
 -spec maybe_set_change(
-  Changeset :: changeset(), Key :: any(), OldValue :: any(), NewValue :: any()
-) -> changeset().
+  Changeset :: t(), Key :: any(), OldValue :: any(), NewValue :: any()
+) -> t().
 
 maybe_set_change(Changeset, _Key, OldValue, OldValue) -> Changeset;
 maybe_set_change(Changeset, Key, _OldValue, NewValue) ->
