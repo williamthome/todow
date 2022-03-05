@@ -7,39 +7,34 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
-cast_test() ->
-  Changeset0 = cast(
-    #{},
-    #{foo => bar, bar => baz},
-    [foo, bar]
-  ),
-  ExpectedChangeset0 = new(
-    #{foo => bar, bar => baz},
-    #{foo => bar, bar => baz},
-    new
-  ),
-  ?assertEqual(ExpectedChangeset0, Changeset0),
-
-  Changeset1 = cast(
-    #{},
-    #{foo => bar, bar => baz},
-    [foo]
-  ),
-  ExpectedChangeset1 = new(
-    #{foo => bar},
-    #{foo => bar},
-    new
-  ),
-  ?assertEqual(ExpectedChangeset1, Changeset1),
-
-  Changeset2 = cast(
-    #{foo => bar},
-    #{bar => baz},
-    [foo, bar]
-  ),
-  ExpectedChangeset2 = new(
-    #{foo => bar, bar => baz},
-    #{bar => baz},
-    update
-  ),
-  ?assertEqual(ExpectedChangeset2, Changeset2).
+cast_test_() ->
+  [
+    {
+      "Empty data returns full changes",
+      ?_assertEqual(
+        new(#{foo => bar, bar => baz}, #{foo => bar, bar => baz}, new),
+        cast(#{}, #{foo => bar, bar => baz}, [foo, bar])
+      )
+    },
+    {
+      "Empty data returns only valid changes",
+      ?_assertEqual(
+        new(#{foo => bar}, #{foo => bar}, new),
+        cast(#{}, #{foo => bar, bar => baz}, [foo])
+      )
+    },
+    {
+      "Merge data and changes returns full value",
+      ?_assertEqual(
+        new(#{foo => bar, bar => baz}, #{bar => baz}, update),
+        cast(#{foo => bar}, #{bar => baz}, [foo, bar])
+      )
+    },
+    {
+      "Merge data and changes returns only valid values",
+      ?_assertEqual(
+        new(#{foo => bar}, #{}, update),
+        cast(#{foo => bar}, #{bar => baz}, [foo])
+      )
+    }
+  ].
