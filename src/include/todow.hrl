@@ -8,3 +8,5 @@
   end
 ).
 -endif.
+
+-define(ERROR(Reason), ?INSPECT({error, Reason})).
