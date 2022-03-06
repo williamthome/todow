@@ -1,5 +1,7 @@
 -module(todow_convert_utils).
 
+-include("../include/todow.hrl").
+
 -type not_integer() :: {error, not_integer}.
 -type not_string() :: {error, not_string}.
 
@@ -100,9 +102,13 @@ to_string(Value) -> to_string(Value, #{}).
 ) -> {ok, string()} | {error, not_string}.
 
 to_string(Value, _Options) when is_list(Value) ->
-  case io_lib:deep_latin1_char_list(Value) of
-    true -> {ok, Value};
-    false -> ?NOT_STRING_ERROR
+  try
+    case io_lib:deep_latin1_char_list(Value) of
+      true -> {ok, Value};
+      false -> {ok, lists:concat([ must_to_string(X) || X <- Value ])}
+    end
+  catch
+    _:_ -> ?NOT_STRING_ERROR
   end;
 to_string(Value, _Options) when is_integer(Value) ->
   try
@@ -130,7 +136,7 @@ to_string(Value, Options) when is_float(Value) ->
   end;
 to_string(Value, _Options) when is_tuple(Value) ->
   try
-    {ok, erlang:tuple_to_list(Value)}
+    to_string(erlang:tuple_to_list(Value))
   catch
     _:_ -> ?NOT_STRING_ERROR
   end;
