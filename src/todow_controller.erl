@@ -1,8 +1,8 @@
 -module(todow_controller).
 
--include("./include/todow.hrl").
-
 -export([ render/2, render/3, render_not_found/1 ]).
+
+-define(TEMPLATE_NOT_FOUND, "pages/not_found.tpl").
 
 render(FileName, Vars, Context) ->
   Html = z_template:render(FileName, Vars, Context),
