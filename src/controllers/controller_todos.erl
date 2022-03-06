@@ -1,6 +1,5 @@
 -module(controller_todos).
 
--include("../include/todow.hrl").
 -include("../include/todow_http.hrl").
 
 -export([ allowed_methods/1, process/4 ]).
