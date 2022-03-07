@@ -34,9 +34,9 @@
     event/2
 ]).
 
-%%====================================================================
-%% support functions go here
-%%====================================================================
+%%%=============================================================================
+%%% Support functions
+%%%=============================================================================
 
 context() -> z:c(todow).
 
@@ -48,14 +48,20 @@ manage_schema(install, _Context) ->
 
 manage_data(_Version, _Context) -> ok.
 
-observe_acl_is_allowed(#acl_is_allowed{object = #acl_mqtt{topic = _Topic}}, _Context) ->
+observe_acl_is_allowed(
+    #acl_is_allowed{object = #acl_mqtt{topic = _Topic}},
+    _Context
+) ->
     %% Allow anonymous access on this topic
     true;
 observe_acl_is_allowed(#acl_is_allowed{}, _Context) ->
     undefined.
 
 'mqtt:test/#'(Message, Context) ->
-    io:format("mqtt:test on site ~p received ~p\n", [ z_context:site(Context), Message ]),
+    io:format(
+        "mqtt:test on site ~p received ~p\n",
+        [ z_context:site(Context), Message ]
+    ),
     ok.
 
 event(#postback{message = world}, Context) ->

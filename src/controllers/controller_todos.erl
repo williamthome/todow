@@ -31,11 +31,14 @@ process(?METHOD_PATCH, ?CONTENT_TYPE_FORM_URLENCODED, ?CONTENT_TYPE_HTML, Contex
   {ok, Title} = todow_http:get_query(<<"title">>, Context, #{default => <<"unknown">>}),
   {<<"Your task updated to ", Title/binary>>, Context}.
 
-%%====================================================================
-%% Internal functions
-%%====================================================================
+%%%=============================================================================
+%%% Internal functions
+%%%=============================================================================
 
-%% @doc render
+%%------------------------------------------------------------------------------
+%% @doc Render.
+%% @end
+%%------------------------------------------------------------------------------
 
 render(index = Action, Context) ->
   do_render(?TEMPLATE_INDEX, Action, Context);
@@ -64,7 +67,10 @@ render(show = Action, Context) ->
       todow_controller:render_not_found(Context)
   end.
 
-%% @doc do_render
+%%------------------------------------------------------------------------------
+%% @doc Process render.
+%% @end
+%%------------------------------------------------------------------------------
 
 do_render(Template, Action, Context) ->
   do_render(Template, Action, Context, []).

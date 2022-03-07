@@ -182,9 +182,9 @@ insert(Schema, TableName, Columns, Values, Returning, Options) ->
   Result = equery(QueryFormatted),
   process_insert_result(Result, Options).
 
-%%====================================================================
-%% Internal functions
-%%====================================================================
+%%%=============================================================================
+%%% Internal functions
+%%%=============================================================================
 
 -spec do_reformat_query(Queries :: list(string()), Acc :: string()) -> string().
 
