@@ -148,8 +148,16 @@ do_validate([], _Value, Result) ->
 do_validate(_Validations, _Value, {error, _} = Error) ->
     Error;
 do_validate([Validates | Validations], Value, _Result) ->
-    Result = Validates(Value),
+    Result = check_validates_result(Validates(Value)),
     do_validate(Validations, Value, Result).
+
+%%------------------------------------------------------------------------------
+%% @doc Check if the validates result is valid.
+%% @end
+%%------------------------------------------------------------------------------
+
+check_validates_result({ok, Value}) -> {ok, Value};
+check_validates_result({error, Reason}) -> {error, Reason}.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates ok result constructor.
