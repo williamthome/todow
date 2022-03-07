@@ -1,6 +1,6 @@
 -module(todow_router).
 
--export([ url_todos/0, url_todos_new/0, url_todos_update/1, url_todos_delete/1 ]).
+-export([url_todos/0, url_todos_new/0, url_todos_update/1, url_todos_delete/1]).
 
 url_todos() -> url(todos).
 url_todos_new() -> url(todos_new).

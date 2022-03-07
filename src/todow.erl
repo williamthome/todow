@@ -25,9 +25,9 @@
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
--export([ context/0, sudo_context/0 ]).
--export([ manage_schema/2, manage_data/2 ]).
--export([ observe_acl_is_allowed/2 ]).
+-export([context/0, sudo_context/0]).
+-export([manage_schema/2, manage_data/2]).
+-export([observe_acl_is_allowed/2]).
 
 -export([
     'mqtt:test/#'/2,
@@ -60,7 +60,7 @@ observe_acl_is_allowed(#acl_is_allowed{}, _Context) ->
 'mqtt:test/#'(Message, Context) ->
     io:format(
         "mqtt:test on site ~p received ~p\n",
-        [ z_context:site(Context), Message ]
+        [z_context:site(Context), Message]
     ),
     ok.
 
