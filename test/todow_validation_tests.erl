@@ -1,37 +1,44 @@
 -module(todow_validation_tests).
 
 -import(todow_validation, [
-  validate_required/1,
-  validate_number/2,
-
-  validate/1, validate/2
+  validates_required/1, required_validation/0,
+  validates_is_integer/1, is_integer_validation/0,
+  validates_range/3, range_validation/2,
+  validate/2
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
 
-validate_required_test() ->
-  ?assertEqual({error, required}, validate_required(undefined)),
-  ?assertEqual({error, required}, validate_required("")),
-  ?assertEqual({error, required}, validate_required(<<>>)),
-  ?assertEqual(ok, validate_required(ok)).
+validates_required_test() ->
+  ?assertMatch({error, _}, validates_required(undefined)),
+  ?assertMatch({error, _}, validates_required("")),
+  ?assertMatch({error, _}, validates_required(<<>>)),
+  ?assertEqual({ok, foo}, validates_required(foo)).
 
-validate_number_test() ->
-  ?assertEqual({error, {range, {0, 1}}}, validate_number(-1, #{range => {0, 1}})),
-  ?assertEqual(ok, validate_number(1, #{range => {0, 1}})).
+validates_range_test() ->
+  ?assertMatch({error, _}, validates_range(-1, 0, 1)),
+  ?assertMatch({ok, 0}, validates_range(0, 0, 1)).
 
 validate_test() ->
-  ?assertEqual({error, required}, validate(undefined, [validate_required])),
-  ?assertEqual({error, required}, validate("", [{validate_required, #{}}])),
-
-  ?assertEqual({error, required}, validate(<<>>, [{todow_validation, validate_required}])),
-  ?assertEqual(ok, validate(ok, [{todow_validation, validate_required, #{}}])),
-
-  ?assertEqual({error, {foo, {range, {0, 1}}}}, validate({foo, -1}, [ validate_required, {validate_number, #{range => {0, 1}}} ])),
-  ?assertEqual({ok, foo}, validate({foo, 1}, [ validate_required, {validate_number, #{range => {0, 1}}} ])),
-
-  ?assertEqual({error, required}, validate(undefined, [fun todow_validation:validate_required/2])),
-  ?assertEqual({error, required}, validate("", [{fun todow_validation:validate_required/2, #{}}])).
-
-validate_multiple_test() ->
-  ?assertEqual(#{errors => [{foo, required}], valid => false}, validate([{{foo, undefined}, [validate_required]}])),
-  ?assertEqual(#{errors => [], valid => true}, validate([{{foo, ok}, [validate_required]}])).
+  ?assertMatch(
+    {error, foo},
+    validate(
+      [
+        fun(V) -> {ok, V} end,
+        fun(V) -> {error, V} end,
+        fun(V) -> {ok, V} end
+      ],
+      foo
+    )
+  ),
+  ?assertMatch(
+    {ok, foo},
+    validate(
+      [
+        fun(V) -> {ok, V} end,
+        fun(V) -> {ok, V} end
+      ],
+      foo
+    )
+  ),
+  ?assertMatch({ok, foo}, validate([], foo)).

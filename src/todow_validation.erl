@@ -1,102 +1,173 @@
 -module(todow_validation).
 
--export([
-  validate_required/1, validate_required/2,
-  validate_number/2,
-  validate_is_integer/1, validate_is_integer/2
+-include("./include/todow.hrl").
+
+-type validates_ok() :: {ok, any()}.
+-type validates_error() :: {error, {atom(), any(), string()}}.
+-type validates_result() :: validates_ok() | validates_error().
+-type validates() :: fun((1) -> validates_result()).
+-type validation() :: fun(() -> validates()).
+
+-export_type([
+  validates_ok/0,
+  validates_error/0,
+  validates_result/0,
+  validates/0,
+  validation/0
 ]).
--export([ validate/1, validate/2 ]).
 
-%% @doc validate_required
+-export([
+  validates_required/1,
+  validates_is_integer/1,
+  validates_range/3
+]).
+-export([
+  required_validation/0,
+  is_integer_validation/0,
+  range_validation/2
+]).
+-export([ validate/2 ]).
 
-validate_required(Value, #{})
-  when Value =/= undefined
-  andalso Value =/= ""
-  andalso Value =/= <<>> ->
-  ok;
+-define(is_defined(Value),
+  Value =/= undefined andalso
+  Value =/= "" andalso
+  Value =/= <<>>
+).
 
-validate_required(_, _) ->
-  {error, required}.
+-define(is_not_empty(Value),
+  ?is_defined(Value) andalso
+  Value =/= []
+).
 
-validate_required(Value) ->
-  validate_required(Value, #{}).
+-define(in_range(Value, Min, Max),
+  is_number(Value) andalso
+  Value >= Min andalso
+  Value =< Max
+).
 
-%% @doc validate_number
+%%------------------------------------------------------------------------------
+%% @doc Validates if the value is defined.
+%% @end
+%%------------------------------------------------------------------------------
 
-validate_number(Value, #{range := {Min, Max}})
-  when Value >= Min andalso Value =< Max ->
-  ok;
+-spec validates_required(Value :: any()) -> validates_result().
 
-validate_number(_, #{range := {Min, Max}}) ->
-  {error, {range, {Min, Max}}}.
+validates_required(Value) when ?is_defined(Value) ->
+  do_ok(Value);
 
-%% @doc validate_is_integer
+validates_required(Value) ->
+  Msg = "Value is required",
+  do_error(required, Value, Msg).
 
-validate_is_integer(Value) when is_integer(Value) ->
-  ok;
+%%------------------------------------------------------------------------------
+%% @doc Validates required constructor.
+%% @end
+%%------------------------------------------------------------------------------
 
-validate_is_integer(_Value) ->
-  {error, not_integer}.
+-spec required_validation() -> validates().
 
-validate_is_integer(Value, #{}) ->
-  validate_is_integer(Value).
+required_validation() ->
+  fun validates_required/1.
 
-%% @doc validate
+%%------------------------------------------------------------------------------
+%% @doc Validates if the value is of integer type.
+%% @end
+%%------------------------------------------------------------------------------
 
-validate({Key, Value}, Validations) ->
-  case validate(Value, Validations) of
-    ok -> {ok, Key};
-    {error, Reason} -> {error, {Key, Reason}}
-  end;
+-spec validates_is_integer(Value :: any()) -> validates_result().
 
-validate(Value, Validations) ->
-  do_validate(Value, Validations, ok).
+validates_is_integer(Value) when is_integer(Value) ->
+  do_ok(Value);
 
-validate(ToValidate) when is_list(ToValidate) ->
-  case lists:foldl(
-    fun({{Key, Value}, Validations}, Acc) ->
-      case validate({Key, Value}, Validations) of
-        {ok, _Key} -> Acc;
-        {error, {Key, Reason}} -> [{Key, Reason} | Acc]
-      end
-    end,
-    [],
-    ToValidate
-  ) of
-    [] -> #{errors => [], valid => true};
-    Errors -> #{errors => Errors, valid => false}
-  end.
+validates_is_integer(Value) ->
+  Msg = "Value must be an integer.",
+  do_error(is_integer, Value, Msg).
 
-%%====================================================================
-%% Internal functions
-%%====================================================================
+%%------------------------------------------------------------------------------
+%% @doc Validates is integer constructor.
+%% @end
+%%------------------------------------------------------------------------------
 
-do_validate(Value, [Function | Validations], ok)
-  when is_atom(Function) ->
-  do_validate(Value, [{Function, #{}} | Validations], ok);
+-spec is_integer_validation() -> validates().
 
-do_validate(Value, [Function | Validations], ok)
-  when is_function(Function, 2) ->
-  do_validate(Value, [{Function, #{}} | Validations], ok);
+is_integer_validation() ->
+  fun validates_is_integer/1.
 
-do_validate(Value, [{Function, Args} | Validations], ok)
-  when is_function(Function, 2) andalso is_map(Args) ->
-  do_validate(Value, Validations, Function(Value, Args));
+%%------------------------------------------------------------------------------
+%% @doc Validates number range.
+%% @end
+%%------------------------------------------------------------------------------
 
-do_validate(Value, [{Function, Args} | Validations], ok)
-  when is_atom(Function) andalso is_map(Args) ->
-  do_validate(Value, Validations, ?MODULE:Function(Value, Args));
+-spec validates_range(
+  Value :: any(), Min :: integer(), Max :: integer()
+) -> validates_result().
 
-do_validate(Value, [{Module, Function} | Validations], ok)
-  when is_atom(Module) andalso is_atom(Function) ->
-  do_validate(Value, [{Module, Function, #{}} | Validations], ok);
+validates_range(Value, Min, Max) when ?in_range(Value, Min, Max) ->
+  do_ok(Value);
 
-do_validate(Value, [{Module, Function, Args} | Validations], ok)
-  when is_atom(Module) andalso is_atom(Function) andalso is_map(Args) ->
-  do_validate(Value, Validations, apply(Module, Function, [Value, Args]));
+validates_range(Value, Min, Max) ->
+  Msg = lists:concat(["Value must a number between ", Min, " and ", Max, "."]),
+  do_error(range, Value, Msg).
 
-do_validate(_Value, _Validations, {error, Error}) ->
-  {error, Error};
+%%------------------------------------------------------------------------------
+%% @doc Validates range constructor.
+%% @end
+%%------------------------------------------------------------------------------
 
-do_validate(_Value, [], Result) ->
-  Result.
+-spec range_validation(Min :: integer(), Max :: integer()) -> validates().
+
+range_validation(Min, Max) ->
+  fun(Value) -> validates_range(Value, Min, Max) end.
+
+%%------------------------------------------------------------------------------
+%% @doc Validate by recursion. Halts on the first error.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec validate(
+  Validations :: list(validation()), Value :: any()
+) -> validates_result().
+
+validate(Validations, Value) ->
+  do_validate(Validations, Value, do_ok(Value)).
+
+%%%=============================================================================
+%%% Internal functions
+%%%=============================================================================
+
+%%------------------------------------------------------------------------------
+%% @doc Process the validate/2 result.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec do_validate(
+  Validations :: list(validation()),
+  Value :: any(),
+  Result :: validates_result()
+) -> validates_result().
+
+do_validate([], _Value, Result) -> Result;
+
+do_validate(_Validations, _Value, {error, _} = Error) -> Error;
+
+do_validate([Validates | Validations], Value, _Result) ->
+  Result = Validates(Value),
+  do_validate(Validations, Value, Result).
+
+%%------------------------------------------------------------------------------
+%% @doc Validates ok result constructor.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec do_ok(any()) -> validates_ok().
+
+do_ok(Value) -> ?OK(Value).
+
+%%------------------------------------------------------------------------------
+%% @doc Validates error result constructor.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec do_error(atom(), any(), string()) -> validates_error().
+
+do_error(Reason, Value, Msg) -> ?ERROR({Reason, Value, Msg}).
