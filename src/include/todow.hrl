@@ -9,4 +9,5 @@
 ).
 -endif.
 
+-define(OK(Result), {ok, Result}).
 -define(ERROR(Reason), ?INSPECT({error, Reason})).
