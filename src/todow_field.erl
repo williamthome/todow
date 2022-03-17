@@ -15,27 +15,32 @@
     validates_required/1
 ]).
 
+-define(DEFAULT_PRIVATE, false).
+-define(DEFAULT_REQUIRED, false).
+-define(DEFAULT_VALUE, undefined).
+-define(DEFAULT_VALIDATIONS, []).
+
+-define(DEFAULT_OPTIONS, #{
+    private => ?DEFAULT_PRIVATE,
+    required => ?DEFAULT_REQUIRED,
+    default => ?DEFAULT_VALUE,
+    validations => ?DEFAULT_VALIDATIONS
+}).
+
 -type type() :: integer | binary | date | boolean.
 
 -record(field, {
     name :: atom(),
     type :: type(),
-    private = false :: boolean(),
-    required = false :: boolean(),
-    default = undefined :: any(),
-    validations = [] :: list(todow_validation:validation())
+    private = ?DEFAULT_PRIVATE :: boolean(),
+    required = ?DEFAULT_REQUIRED :: boolean(),
+    default = ?DEFAULT_VALUE :: any(),
+    validations = ?DEFAULT_VALIDATIONS :: list(todow_validation:validation())
 }).
 -opaque t() :: #field{}.
 
 -export_type([t/0, type/0]).
 -export([new/2, new/3]).
-
--define(DEFAULT_OPTIONS, #{
-    private => false,
-    required => false,
-    default => undefined,
-    validations => []
-}).
 
 %%------------------------------------------------------------------------------
 %% @doc Field constructor.
