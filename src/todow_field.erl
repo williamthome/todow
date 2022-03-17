@@ -27,42 +27,108 @@
     validations => ?DEFAULT_VALIDATIONS
 }).
 
+-type name() :: atom().
 -type type() :: integer | binary | date | boolean.
+-type private() :: boolean().
+-type required() :: boolean().
+-type default() :: any().
+-type validations() :: list(todow_validation:validation()).
 
 -record(field, {
-    name :: atom(),
+    name :: name(),
     type :: type(),
-    private = ?DEFAULT_PRIVATE :: boolean(),
-    required = ?DEFAULT_REQUIRED :: boolean(),
-    default = ?DEFAULT_VALUE :: any(),
-    validations = ?DEFAULT_VALIDATIONS :: list(todow_validation:validation())
+    private = ?DEFAULT_PRIVATE :: private(),
+    required = ?DEFAULT_REQUIRED :: required(),
+    default = ?DEFAULT_VALUE :: default(),
+    validations = ?DEFAULT_VALIDATIONS :: validations()
 }).
 -opaque t() :: #field{}.
 
 -export_type([t/0, type/0]).
--export([new/2, new/3]).
+-export([
+    new/2, new/3,
+    name/1,
+    type/1,
+    private/1,
+    required/1,
+    default/1,
+    validations/1
+]).
 
 %%------------------------------------------------------------------------------
 %% @doc Field constructor.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec new(Name :: atom(), Type :: type()) -> t().
+-spec new(Name :: name(), Type :: type()) -> t().
 
-new(Name, Type) ->
-    new(Name, Type, maps:new()).
+new(Name, Type) -> new(Name, Type, maps:new()).
 
 %%------------------------------------------------------------------------------
 %% @doc Field constructor.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec new(Name :: atom(), Type :: type(), Options :: map()) -> t().
+-spec new(Name :: name(), Type :: type(), Options :: map()) -> t().
 
 new(Name, Type, Options) ->
     Required = #{name => Name, type => Type},
     Args = maps:merge(Required, do_options(Options)),
     do_new(Args).
+
+%%------------------------------------------------------------------------------
+%% @doc Get field name.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec name(Field :: t()) -> name().
+
+name(#field{name = Name}) -> Name.
+
+%%------------------------------------------------------------------------------
+%% @doc Get field type.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec type(Field :: t()) -> type().
+
+type(#field{type = Type}) -> Type.
+
+%%------------------------------------------------------------------------------
+%% @doc Get field private.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec private(Field :: t()) -> private().
+
+private(#field{private = Private}) -> Private.
+
+%%------------------------------------------------------------------------------
+%% @doc Get field required.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec required(Field :: t()) -> required().
+
+required(#field{required = Required}) -> Required.
+
+%%------------------------------------------------------------------------------
+%% @doc Get field default.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec default(Field :: t()) -> default().
+
+default(#field{default = Default}) -> Default.
+
+%%------------------------------------------------------------------------------
+%% @doc Get field validations.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec validations(Field :: t()) -> validations().
+
+validations(#field{validations = Validations}) -> Validations.
 
 %%%=============================================================================
 %%% Internal functions
