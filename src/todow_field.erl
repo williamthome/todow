@@ -40,7 +40,16 @@
 }).
 -opaque t() :: #field{}.
 
--export_type([t/0, type/0]).
+-export_type([
+    t/0,
+    name/0,
+    type/0,
+    private/0,
+    required/0,
+    default/0,
+    validations/0
+]).
+
 -export([
     new/2, new/3,
     name/1,
