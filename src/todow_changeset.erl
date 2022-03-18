@@ -243,17 +243,14 @@ set_change_test() ->
     ).
 
 maybe_set_change_test() ->
+    Change = #changeset{data = #{foo => bar}, changes = #{foo => bar}},
     ?assertEqual(
         #changeset{data = #{foo => bar}, changes = #{foo => bar}},
-        maybe_set_change(
-            #changeset{data = #{foo => bar}, changes = #{foo => bar}}, foo, bar, bar
-        )
+        maybe_set_change(Change, foo, bar, bar)
     ),
     ?assertEqual(
         #changeset{data = #{foo => baz}, changes = #{foo => baz}},
-        maybe_set_change(
-            #changeset{data = #{foo => bar}, changes = #{foo => bar}}, foo, bar, baz
-        )
+        maybe_set_change(Change, foo, bar, baz)
     ).
 
 -endif.
