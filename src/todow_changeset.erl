@@ -29,14 +29,20 @@
 
 -define(is_cast_action(Action), Action =:= new orelse Action =:= update).
 
-%%%=============================================================================
-%%% API
-%%%=============================================================================
+%%------------------------------------------------------------------------------
+%% @doc Changeset constructor.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec new(Data :: map(), Changes :: map()) -> {ok, t()}.
 
 new(Data, Changes) ->
     new(Data, Changes, guess_action(Data)).
+
+%%------------------------------------------------------------------------------
+%% @doc Changeset constructor.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec new(Data :: map(), Changes :: map(), Action :: action()) -> {ok, t()}.
 
@@ -48,43 +54,88 @@ new(Data, Changes, Action) ->
     },
     {ok, Changeset}.
 
+%%------------------------------------------------------------------------------
+%% @doc Check if is changeset record.
+%% @end
+%%------------------------------------------------------------------------------
+
 -spec is_changeset(Unknown :: any()) -> boolean().
 
 is_changeset(Unknown) when is_record(Unknown, changeset) -> true;
 is_changeset(_Unknown) -> false.
+
+%%------------------------------------------------------------------------------
+%% @doc Get changeset changes.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec get_changes(Changeset :: t()) -> map().
 
 get_changes(undefined) -> undefined;
 get_changes(#changeset{changes = Changes}) -> Changes.
 
+%%------------------------------------------------------------------------------
+%% @doc Set changeset changes.
+%% @end
+%%------------------------------------------------------------------------------
+
 -spec set_changes(Changeset :: t(), Changes :: map()) -> t().
 
 set_changes(Changeset, Changes) -> Changeset#changeset{changes = Changes}.
+
+%%------------------------------------------------------------------------------
+%% @doc Get changeset data.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec get_data(Changeset :: t()) -> map().
 
 get_data(undefined) -> undefined;
 get_data(#changeset{data = Data}) -> Data.
 
+%%------------------------------------------------------------------------------
+%% @doc Set changeset data.
+%% @end
+%%------------------------------------------------------------------------------
+
 -spec set_data(Changeset :: t(), Data :: map()) -> t().
 
 set_data(Changeset, Data) -> Changeset#changeset{data = Data}.
+
+%%------------------------------------------------------------------------------
+%% @doc Get changeset action.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec get_action(Changeset :: t()) -> action().
 
 get_action(undefined) -> undefined;
 get_action(#changeset{action = Action}) -> Action.
 
+%%------------------------------------------------------------------------------
+%% @doc Set changeset action.
+%% @end
+%%------------------------------------------------------------------------------
+
 -spec set_action(Changeset :: t(), Action :: action()) -> t().
 
 set_action(Changeset, Action) -> Changeset#changeset{action = Action}.
+
+%%------------------------------------------------------------------------------
+%% @doc Cast to changeset.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec cast(
     Data :: map(), Changes :: map(), ValidKeys :: list()
 ) -> {ok, t()}.
 
 cast(Data, Changes, ValidKeys) -> cast(Data, Changes, ValidKeys, #{}).
+
+%%------------------------------------------------------------------------------
+%% @doc Cast to changeset.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec cast(
     Data :: map(), Changes :: map(), ValidKeys :: list(), Options :: map()
@@ -120,10 +171,20 @@ cast(Data, Changes, ValidKeys, Options) when
 %%% Internal functions
 %%%=============================================================================
 
+%%------------------------------------------------------------------------------
+%% @doc Guess action.
+%% @end
+%%------------------------------------------------------------------------------
+
 -spec guess_action(Data :: map()) -> new | update.
 
 guess_action(Data) when map_size(Data) == 0 -> new;
 guess_action(Data) when is_map(Data) -> update.
+
+%%------------------------------------------------------------------------------
+%% @doc Maybe merge defaults.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec maybe_merge_defaults(
     ActionOrData :: new | update, Changes :: map(), Defaults :: map()
@@ -131,6 +192,11 @@ guess_action(Data) when is_map(Data) -> update.
 
 maybe_merge_defaults(new, Changes, Defaults) -> maps:merge(Defaults, Changes);
 maybe_merge_defaults(update, Changes, _Defaults) -> Changes.
+
+%%------------------------------------------------------------------------------
+%% @doc Set changeset change.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec set_change(
     Changeset :: t(), Key :: any(), Value :: any()
@@ -143,6 +209,11 @@ set_change(Changeset, Key, Value) ->
         changes = Changes,
         data = Data
     }.
+
+%%------------------------------------------------------------------------------
+%% @doc Maybe set changeset change.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec maybe_set_change(
     Changeset :: t(), Key :: any(), OldValue :: any(), NewValue :: any()
