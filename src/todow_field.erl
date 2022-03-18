@@ -11,10 +11,6 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--import(todow_validation, [
-    validates_required/1
-]).
-
 -define(DEFAULT_PRIVATE, false).
 -define(DEFAULT_REQUIRED, false).
 -define(DEFAULT_VALUE, undefined).
