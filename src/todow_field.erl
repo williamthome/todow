@@ -28,7 +28,7 @@
 -type private() :: boolean().
 -type required() :: boolean().
 -type default() :: any().
--type validations() :: list(todow_validation:validates()).
+-type validations() :: todow_validation:validations().
 
 -record(field, {
     name :: name(),

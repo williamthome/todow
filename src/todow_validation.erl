@@ -6,14 +6,14 @@
 -type validates_error() :: {error, {atom(), any(), string()}}.
 -type validates_result() :: validates_ok() | validates_error().
 -type validates() :: fun((1) -> validates_result()).
--type validation() :: fun(() -> validates()).
+-type validations() :: list(validates()).
 
 -export_type([
     validates_ok/0,
     validates_error/0,
     validates_result/0,
     validates/0,
-    validation/0
+    validations/0
 ]).
 
 -export([
@@ -122,7 +122,7 @@ range_validation(Min, Max) ->
 %%------------------------------------------------------------------------------
 
 -spec validate(
-    Validations :: list(validation()), Value :: any()
+    Validations :: validations(), Value :: any()
 ) -> validates_result().
 
 validate(Validations, Value) ->
@@ -138,7 +138,7 @@ validate(Validations, Value) ->
 %%------------------------------------------------------------------------------
 
 -spec do_validate(
-    Validations :: list(validation()),
+    Validations :: validations(),
     Value :: any(),
     Result :: validates_result()
 ) -> validates_result().
