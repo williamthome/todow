@@ -9,9 +9,9 @@
 -record(changeset, {
     data = maps:new() :: map(),
     changes = maps:new() :: map(),
-    action :: action(),
+    action = undefined :: action(),
     errors = maps:new() :: map(),
-    valid = true :: boolean()
+    valid = false :: boolean()
 }).
 -opaque t() :: #changeset{}.
 
@@ -20,17 +20,13 @@
 -export([
     new/2, new/3, new/4,
     is_changeset/1,
-    get_changes/1,
-    set_changes/2,
-    get_data/1,
-    set_data/2,
-    get_action/1,
-    set_action/2,
-    get_errors/1,
-    is_valid/1
+    get_changes/1, set_changes/2,
+    get_data/1, set_data/2,
+    get_action/1, set_action/2,
+    get_errors/1, with_errors/1, put_error/3,
+    is_valid/1, set_valid/1
 ]).
 -export([
-    put_error/3,
     changes_without_errors/1,
     cast/3, cast/4
 ]).
@@ -151,6 +147,17 @@ get_errors(undefined) -> undefined;
 get_errors(#changeset{errors = Errors}) -> Errors.
 
 %%------------------------------------------------------------------------------
+%% @doc Returns true if changeset errors have values.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec with_errors(Payload :: t() | map()) -> boolean().
+
+with_errors(#changeset{errors = Errors}) -> with_errors(Errors);
+
+with_errors(Errors) -> map_size(Errors) =/= 0.
+
+%%------------------------------------------------------------------------------
 %% @doc Returns true if changeset is valid, otherwise false.
 %% @end
 %%------------------------------------------------------------------------------
@@ -170,6 +177,19 @@ is_valid(#changeset{valid = Valid}) -> Valid.
 put_error(Changeset, Key, Error) ->
     Errors = maps:put(Key, Error, get_errors(Changeset)),
     Changeset#changeset{errors = Errors}.
+
+%%------------------------------------------------------------------------------
+%% @doc Set changeset action.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec set_valid(Changeset :: t()) -> t().
+
+set_valid(Changeset) -> set_valid(Changeset, not with_errors(Changeset)).
+
+-spec set_valid(Changeset :: t(), Valid :: boolean()) -> t().
+
+set_valid(Changeset, Valid) -> Changeset#changeset{valid = Valid}.
 
 %%------------------------------------------------------------------------------
 %% @doc Return only changes who keys are not present in changeset errors.
@@ -225,7 +245,7 @@ cast(Data, Changes, ValidKeys, Options) when
         },
         maybe_merge_defaults(Action, Changes, Defaults)
     ),
-    {ok, Changeset}.
+    {ok, set_valid(Changeset)}.
 
 %%%=============================================================================
 %%% Internal functions
