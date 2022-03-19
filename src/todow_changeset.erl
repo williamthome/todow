@@ -4,18 +4,44 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
+-type data() :: map().
+-type changes() :: map().
 -type action() :: new | update | undefined.
+-type errors() :: map().
+-type valid() :: boolean().
+
+-define(DEFAULT_DATA, maps:new()).
+-define(DEFAULT_CHANGES, maps:new()).
+-define(DEFAULT_ACTION, undefined).
+-define(DEFAULT_ERRORS, maps:new()).
+-define(DEFAULT_VALID, false).
+-define(DEFAULTS, #{
+    data => ?DEFAULT_DATA,
+    changes => ?DEFAULT_CHANGES,
+    action => ?DEFAULT_ACTION,
+    errors => ?DEFAULT_ERRORS,
+    valid => ?DEFAULT_VALID
+}).
+
+-define(is_cast_action(Action), Action =:= new orelse Action =:= update).
 
 -record(changeset, {
-    data = maps:new() :: map(),
-    changes = maps:new() :: map(),
-    action = undefined :: action(),
-    errors = maps:new() :: map(),
-    valid = false :: boolean()
+    data = ?DEFAULT_DATA :: data(),
+    changes = ?DEFAULT_CHANGES :: changes(),
+    action = ?DEFAULT_ACTION :: action(),
+    errors = ?DEFAULT_ERRORS :: errors(),
+    valid = ?DEFAULT_VALID :: valid()
 }).
 -opaque t() :: #changeset{}.
 
--export_type([t/0, action/0]).
+-export_type([
+    t/0,
+    data/0,
+    changes/0,
+    action/0,
+    errors/0,
+    valid/0
+]).
 
 -export([
     new/0, new/2, new/3, new/4,
@@ -31,8 +57,6 @@
     cast/3, cast/4
 ]).
 
--define(is_cast_action(Action), Action =:= new orelse Action =:= update).
-
 %%------------------------------------------------------------------------------
 %% @doc Changeset constructor with defaults.
 %% @end
@@ -47,7 +71,7 @@ new() -> #changeset{}.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec new(Data :: map(), Changes :: map()) -> {ok, t()}.
+-spec new(Data :: data(), Changes :: changes()) -> {ok, t()}.
 
 new(Data, Changes) -> new(Data, Changes, guess_action(Data)).
 
@@ -56,7 +80,7 @@ new(Data, Changes) -> new(Data, Changes, guess_action(Data)).
 %% @end
 %%------------------------------------------------------------------------------
 
--spec new(Data :: map(), Changes :: map(), Action :: action()) -> {ok, t()}.
+-spec new(Data :: data(), Changes :: changes(), Action :: action()) -> {ok, t()}.
 
 new(Data, Changes, Action) -> new(Data, Changes, Action, maps:new()).
 
@@ -66,7 +90,7 @@ new(Data, Changes, Action) -> new(Data, Changes, Action, maps:new()).
 %%------------------------------------------------------------------------------
 
 -spec new(
-    Data :: map(), Changes :: map(), Action :: action(), Errors :: map()
+    Data :: data(), Changes :: changes(), Action :: action(), Errors :: errors()
 ) -> {ok, t()}.
 
 new(Data, Changes, Action, Errors) ->
@@ -103,7 +127,7 @@ get_changes(#changeset{changes = Changes}) -> Changes.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec set_changes(Changeset :: t(), Changes :: map()) -> t().
+-spec set_changes(Changeset :: t(), Changes :: changes()) -> t().
 
 set_changes(Changeset, Changes) -> Changeset#changeset{changes = Changes}.
 
@@ -122,7 +146,7 @@ get_data(#changeset{data = Data}) -> Data.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec set_data(Changeset :: t(), Data :: map()) -> t().
+-spec set_data(Changeset :: t(), Data :: data()) -> t().
 
 set_data(Changeset, Data) -> Changeset#changeset{data = Data}.
 
@@ -160,7 +184,7 @@ get_errors(#changeset{errors = Errors}) -> Errors.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec with_errors(Payload :: t() | map()) -> boolean().
+-spec with_errors(Payload :: t() | errors()) -> boolean().
 
 with_errors(#changeset{errors = Errors}) -> with_errors(Errors);
 
@@ -171,7 +195,7 @@ with_errors(Errors) -> map_size(Errors) =/= 0.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec is_valid(Changeset :: t()) -> boolean().
+-spec is_valid(Changeset :: t()) -> valid().
 
 is_valid(undefined) -> false;
 is_valid(#changeset{valid = Valid}) -> Valid.
@@ -196,7 +220,7 @@ put_error(Changeset, Key, Error) ->
 
 set_valid(Changeset) -> set_valid(Changeset, not with_errors(Changeset)).
 
--spec set_valid(Changeset :: t(), Valid :: boolean()) -> t().
+-spec set_valid(Changeset :: t(), Valid :: valid()) -> t().
 
 set_valid(Changeset, Valid) -> Changeset#changeset{valid = Valid}.
 
@@ -216,7 +240,7 @@ changes_without_errors(#changeset{errors = Errors, changes = Changes}) ->
 %%------------------------------------------------------------------------------
 
 -spec cast(
-    Data :: map(), Changes :: map(), ValidKeys :: list()
+    Data :: data(), Changes :: changes(), ValidKeys :: list()
 ) -> {ok, t()}.
 
 cast(Data, Changes, ValidKeys) -> cast(Data, Changes, ValidKeys, #{}).
@@ -227,7 +251,7 @@ cast(Data, Changes, ValidKeys) -> cast(Data, Changes, ValidKeys, #{}).
 %%------------------------------------------------------------------------------
 
 -spec cast(
-    Data :: map(), Changes :: map(), ValidKeys :: list(), Options :: map()
+    Data :: data(), Changes :: changes(), ValidKeys :: list(), Options :: map()
 ) -> {ok, t()}.
 
 cast(Data, Changes, ValidKeys, Options) when
@@ -265,7 +289,7 @@ cast(Data, Changes, ValidKeys, Options) when
 %% @end
 %%------------------------------------------------------------------------------
 
--spec guess_action(Data :: map()) -> new | update.
+-spec guess_action(Data :: data()) -> new | update.
 
 guess_action(Data) when map_size(Data) == 0 -> new;
 guess_action(Data) when is_map(Data) -> update.
@@ -276,7 +300,7 @@ guess_action(Data) when is_map(Data) -> update.
 %%------------------------------------------------------------------------------
 
 -spec maybe_merge_defaults(
-    ActionOrData :: new | update, Changes :: map(), Defaults :: map()
+    Action :: new | update, Changes :: changes(), Defaults :: map()
 ) -> map().
 
 maybe_merge_defaults(new, Changes, Defaults) -> maps:merge(Defaults, Changes);
