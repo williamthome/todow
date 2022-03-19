@@ -9,23 +9,31 @@
 -record(changeset, {
     data = maps:new() :: map(),
     changes = maps:new() :: map(),
-    action :: action()
+    action :: action(),
+    errors = maps:new() :: map(),
+    valid = true :: boolean()
 }).
 -opaque t() :: #changeset{}.
 
 -export_type([t/0, action/0]).
 
 -export([
-    new/2, new/3,
+    new/2, new/3, new/4,
     is_changeset/1,
     get_changes/1,
     set_changes/2,
     get_data/1,
     set_data/2,
     get_action/1,
-    set_action/2
+    set_action/2,
+    get_errors/1,
+    is_valid/1
 ]).
--export([cast/3, cast/4]).
+-export([
+    put_error/3,
+    changes_without_errors/1,
+    cast/3, cast/4
+]).
 
 -define(is_cast_action(Action), Action =:= new orelse Action =:= update).
 
@@ -36,8 +44,7 @@
 
 -spec new(Data :: map(), Changes :: map()) -> {ok, t()}.
 
-new(Data, Changes) ->
-    new(Data, Changes, guess_action(Data)).
+new(Data, Changes) -> new(Data, Changes, guess_action(Data)).
 
 %%------------------------------------------------------------------------------
 %% @doc Changeset constructor.
@@ -46,11 +53,24 @@ new(Data, Changes) ->
 
 -spec new(Data :: map(), Changes :: map(), Action :: action()) -> {ok, t()}.
 
-new(Data, Changes, Action) ->
+new(Data, Changes, Action) -> new(Data, Changes, Action, maps:new()).
+
+%%------------------------------------------------------------------------------
+%% @doc Changeset constructor.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec new(
+    Data :: map(), Changes :: map(), Action :: action(), Errors :: map()
+) -> {ok, t()}.
+
+new(Data, Changes, Action, Errors) ->
     Changeset = #changeset{
         data = Data,
         changes = Changes,
-        action = Action
+        action = Action,
+        errors = Errors,
+        valid = map_size(Errors) =:= 0
     },
     {ok, Changeset}.
 
@@ -61,8 +81,7 @@ new(Data, Changes, Action) ->
 
 -spec is_changeset(Unknown :: any()) -> boolean().
 
-is_changeset(Unknown) when is_record(Unknown, changeset) -> true;
-is_changeset(_Unknown) -> false.
+is_changeset(Unknown) -> is_record(Unknown, changeset).
 
 %%------------------------------------------------------------------------------
 %% @doc Get changeset changes.
@@ -120,6 +139,47 @@ get_action(#changeset{action = Action}) -> Action.
 -spec set_action(Changeset :: t(), Action :: action()) -> t().
 
 set_action(Changeset, Action) -> Changeset#changeset{action = Action}.
+
+%%------------------------------------------------------------------------------
+%% @doc Get changeset errors.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec get_errors(Changeset :: t()) -> map().
+
+get_errors(undefined) -> undefined;
+get_errors(#changeset{errors = Errors}) -> Errors.
+
+%%------------------------------------------------------------------------------
+%% @doc Returns true if changeset is valid, otherwise false.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec is_valid(Changeset :: t()) -> boolean().
+
+is_valid(undefined) -> false;
+is_valid(#changeset{valid = Valid}) -> Valid.
+
+%%------------------------------------------------------------------------------
+%% @doc Put an error for the given key into the changeset.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec put_error(Changeset :: t(), Key :: any(), Error :: any()) -> t().
+
+put_error(Changeset, Key, Error) ->
+    Errors = maps:put(Key, Error, get_errors(Changeset)),
+    Changeset#changeset{errors = Errors}.
+
+%%------------------------------------------------------------------------------
+%% @doc Return only changes who keys are not present in changeset errors.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec changes_without_errors(Changeset :: t()) -> map().
+
+changes_without_errors(#changeset{errors = Errors, changes = Changes}) ->
+    maps:without(maps:keys(Errors), Changes).
 
 %%------------------------------------------------------------------------------
 %% @doc Cast to changeset.
@@ -251,6 +311,21 @@ maybe_set_change_test() ->
     ?assertEqual(
         #changeset{data = #{foo => baz}, changes = #{foo => baz}},
         maybe_set_change(Change, foo, bar, baz)
+    ).
+
+put_error_test() ->
+    ?assertEqual(
+        #changeset{errors = #{foo => bar}},
+        put_error(#changeset{}, foo, bar)
+    ).
+
+changes_without_errors_test() ->
+    ?assertEqual(
+        #{foo => bar},
+        changes_without_errors(#changeset{
+            changes = #{foo => bar, bar => baz},
+            errors = #{bar => baz}
+        })
     ).
 
 -endif.
