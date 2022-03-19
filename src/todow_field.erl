@@ -28,7 +28,7 @@
 -type private() :: boolean().
 -type required() :: boolean().
 -type default() :: any().
--type validations() :: list(todow_validation:validation()).
+-type validations() :: list(todow_validation:validates()).
 
 -record(field, {
     name :: name(),
@@ -60,6 +60,10 @@
     validations/1
 ]).
 
+-export([
+    validate/2
+]).
+
 %%------------------------------------------------------------------------------
 %% @doc Field constructor.
 %% @end
@@ -77,9 +81,12 @@ new(Name, Type) -> new(Name, Type, maps:new()).
 -spec new(Name :: name(), Type :: type(), Options :: map()) -> t().
 
 new(Name, Type, Options) ->
-    Required = #{name => Name, type => Type},
-    Args = maps:merge(Required, do_options(Options)),
-    do_new(Args).
+    Args = #{
+        name => Name,
+        type => Type,
+        validations => do_validations(Options)
+    },
+    do_new(maps:merge(Args, do_options(Options))).
 
 %%------------------------------------------------------------------------------
 %% @doc Get field name.
@@ -135,6 +142,14 @@ default(#field{default = Default}) -> Default.
 
 validations(#field{validations = Validations}) -> Validations.
 
+%%------------------------------------------------------------------------------
+%% @doc Validates field value.
+%% @end
+%%------------------------------------------------------------------------------
+
+validate(#field{validations = Validations}, Value) ->
+    todow_validation:validate(Validations, Value).
+
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
@@ -162,6 +177,17 @@ do_new(#{
         default = Default,
         validations = Validations
     }.
+
+%%------------------------------------------------------------------------------
+%% @doc Default validations.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec do_validations(Options :: map()) -> validations().
+
+do_validations(#{required := true}) ->
+    [todow_validation:required_validation() | ?DEFAULT_VALIDATIONS];
+do_validations(_Options) -> ?DEFAULT_VALIDATIONS.
 
 %%------------------------------------------------------------------------------
 %% @doc Merge options with default options.
