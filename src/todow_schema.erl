@@ -20,7 +20,12 @@
 }).
 -opaque t() :: #schema{}.
 
--export_type([t/0]).
+-export_type([
+    t/0,
+    name/0,
+    fields/0
+]).
+
 -export([
     new/2,
     name/1,
