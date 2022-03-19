@@ -18,7 +18,7 @@
 -export_type([t/0, action/0]).
 
 -export([
-    new/2, new/3, new/4,
+    new/0, new/2, new/3, new/4,
     is_changeset/1,
     get_changes/1, set_changes/2,
     get_data/1, set_data/2,
@@ -32,6 +32,15 @@
 ]).
 
 -define(is_cast_action(Action), Action =:= new orelse Action =:= update).
+
+%%------------------------------------------------------------------------------
+%% @doc Changeset constructor with defaults.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec new() -> t().
+
+new() -> #changeset{}.
 
 %%------------------------------------------------------------------------------
 %% @doc Changeset constructor.
