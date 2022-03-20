@@ -53,7 +53,7 @@
     is_valid/1, set_valid/1
 ]).
 -export([
-    changes_without_errors/1,
+    with_valid_changes/1,
     cast/3, cast/4,
     validate/4
 ]).
@@ -226,13 +226,13 @@ set_valid(Changeset) -> set_valid(Changeset, not with_errors(Changeset)).
 set_valid(Changeset, Valid) -> Changeset#changeset{valid = Valid}.
 
 %%------------------------------------------------------------------------------
-%% @doc Return only changes who keys are not present in changeset errors.
+%% @doc Returns changeset who only keys of changes are not present in errors.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec changes_without_errors(Changeset :: t()) -> map().
+-spec with_valid_changes(Changeset :: t()) -> map().
 
-changes_without_errors(#changeset{errors = Errors, changes = Changes}) ->
+with_valid_changes(#changeset{errors = Errors, changes = Changes}) ->
     maps:without(maps:keys(Errors), Changes).
 
 %%------------------------------------------------------------------------------
@@ -409,7 +409,7 @@ put_error_test() ->
 changes_without_errors_test() ->
     ?assertEqual(
         #{foo => bar},
-        changes_without_errors(#changeset{
+        with_valid_changes(#changeset{
             changes = #{foo => bar, bar => baz},
             errors = #{bar => baz}
         })
