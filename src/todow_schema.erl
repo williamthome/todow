@@ -13,6 +13,10 @@
 
 -type name() :: atom().
 -type fields() :: nonempty_list(todow_field:t()).
+-type field() ::
+    {ok, todow_field:t()} | {error, {not_found, todow_field:name()}}.
+-type validate() ::
+    {ok, todow_changeset:t()} | {error, todow_changeset:errors()}.
 
 -record(schema, {
     name :: name(),
@@ -23,14 +27,22 @@
 -export_type([
     t/0,
     name/0,
-    fields/0
+    fields/0,
+    field/0,
+    validate/0
 ]).
 
 -export([
     new/2,
     name/1,
-    fields/1,
-    cast/2, cast/3
+    fields/1
+]).
+
+-export([
+    field/2,
+    is_field/2,
+    cast/2, cast/3,
+    validate/2, validate/3
 ]).
 
 %%------------------------------------------------------------------------------
@@ -61,11 +73,37 @@ name(#schema{name = Name}) -> Name.
 fields(#schema{fields = Fields}) -> Fields.
 
 %%------------------------------------------------------------------------------
+%% @doc Get schema field by field name.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec field(Schema :: t(), FieldName :: todow_field:name()) -> field().
+
+field(#schema{fields = Fields}, FieldName) ->
+    case lists:dropwhile(
+        fun(Field) -> todow_field:name(Field) =/= FieldName end,
+        Fields
+    ) of
+        [] -> {error, {not_found, FieldName}};
+        [Field | _] -> {ok, Field}
+    end.
+
+%%------------------------------------------------------------------------------
+%% @doc Returns true if field name it's a schema field.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec is_field(Schema :: t(), FieldName :: todow_field:name()) -> boolean().
+
+is_field(Schema, FieldName) ->
+    field(Schema, FieldName) =/= {error, {not_found, FieldName}}.
+
+%%------------------------------------------------------------------------------
 %% @doc Cast schema changes to changeset.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec cast(Schema :: t(), Changes :: map()) -> {ok, changeset:t()}.
+-spec cast(Schema :: t(), Changes :: map()) -> {ok, todow_changeset:t()}.
 
 cast(Schema, Changes) -> cast(Schema, Changes, maps:new()).
 
@@ -74,7 +112,9 @@ cast(Schema, Changes) -> cast(Schema, Changes, maps:new()).
 %% @end
 %%------------------------------------------------------------------------------
 
--spec cast(Schema :: t(), Data :: map(), Changes :: map()) -> {ok, changeset:t()}.
+-spec cast(
+    Schema :: t(), Data :: map(), Changes :: map()
+) -> {ok, todow_changeset:t()}.
 
 cast(Schema, Data, Changes) ->
     todow_changeset:cast(
@@ -83,6 +123,42 @@ cast(Schema, Data, Changes) ->
         not_private_fields_name(Schema),
         #{defaults => defaults(Schema)}
     ).
+
+%%------------------------------------------------------------------------------
+%% @doc Validates schema.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec validate(Schema :: t(), Data :: map(), Changes :: map()) -> validate().
+
+validate(Schema, Data, Changes) ->
+    {ok, Changeset} = cast(Schema, Data, Changes),
+    validate(Schema, Changeset).
+
+%%------------------------------------------------------------------------------
+%% @doc Validates schema.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec validate(Schema :: t(), Changeset :: todow_changeset:t()) -> validate().
+
+validate(Schema, Changeset) ->
+    ChangesetWithValidChanges = todow_changeset:with_valid_changes(Changeset),
+    ChangesetValidated = maps:fold(
+        fun(Key, Value, ChangesetAcc) ->
+            case field(Schema, Key) of
+                {error, {not_found, _FieldName}} -> ChangesetAcc;
+                {ok, Field} ->
+                    todow_field:validate_changeset(ChangesetAcc, Field, Value)
+            end
+        end,
+        Changeset,
+        ChangesetWithValidChanges
+    ),
+    case todow_changeset:is_valid(ChangesetValidated) of
+        true -> {ok, Changeset};
+        false -> {error, todow_changeset:get_errors(Changeset)}
+    end.
 
 %%%=============================================================================
 %%% Internal functions
