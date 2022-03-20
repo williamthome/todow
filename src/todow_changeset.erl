@@ -54,7 +54,8 @@
 ]).
 -export([
     changes_without_errors/1,
-    cast/3, cast/4
+    cast/3, cast/4,
+    validate/4
 ]).
 
 %%------------------------------------------------------------------------------
@@ -280,6 +281,24 @@ cast(Data, Changes, ValidKeys, Options) when
     ),
     {ok, set_valid(Changeset)}.
 
+%%------------------------------------------------------------------------------
+%% @doc Validates changeset.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec validate(
+    Changeset :: t(),
+    Validations :: todow:validations(),
+    Key :: any(),
+    Value :: any()
+) -> t().
+
+validate(#changeset{action = update} = Changeset, Validations, Key, Value) ->
+    ValidateResult = todow_validation:validate(Validations, Value),
+    maybe_put_validate_error(ValidateResult, Changeset, Key);
+validate(#changeset{action = new} = Changeset, _Validations, _Key, _Value) ->
+    Changeset.
+
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
@@ -335,6 +354,21 @@ set_change(Changeset, Key, Value) ->
 maybe_set_change(Changeset, _Key, OldValue, OldValue) -> Changeset;
 maybe_set_change(Changeset, Key, _OldValue, NewValue) -> set_change(Changeset, Key, NewValue).
 
+%%------------------------------------------------------------------------------
+%% @doc Maybe put validate error in changeset.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec maybe_put_validate_error(
+    Result :: todow_validation:validates_result(),
+    Changeset :: t(),
+    Key :: any()
+) -> t().
+
+maybe_put_validate_error({error, Error}, Changeset, Key) ->
+    todow_changeset:put_error(Changeset, Key, Error);
+maybe_put_validate_error({ok, _Value}, Changeset, _Key) -> Changeset.
+
 %%%=============================================================================
 %%% Tests
 %%%=============================================================================
@@ -379,6 +413,31 @@ changes_without_errors_test() ->
             changes = #{foo => bar, bar => baz},
             errors = #{bar => baz}
         })
+    ).
+
+do_validate_test() ->
+    ?assertEqual(
+        #changeset{action = update, errors = #{foo => bar}},
+        validate(
+            #changeset{action = update},
+            [fun(bar) -> {error, bar} end],
+            foo,
+            bar
+        )
+    ),
+    ?assertEqual(
+        #changeset{action = new},
+        validate(#changeset{action = new}, [], any_key, any_value)
+    ).
+
+maybe_put_validate_error_test() ->
+    ?assertEqual(
+        #changeset{},
+        maybe_put_validate_error({ok, any_value}, #changeset{}, any_key)
+    ),
+    ?assertEqual(
+        #changeset{errors = #{foo => bar}},
+        maybe_put_validate_error({error, bar}, #changeset{}, foo)
     ).
 
 -endif.
