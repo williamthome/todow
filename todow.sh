@@ -15,6 +15,9 @@ case $1 in
   format)
     rebar3 fmt
   ;;
+  dialyzer)
+    rebar3 dialyzer
+  ;;
   test)
     case $2 in
       ""|unit)
@@ -56,6 +59,7 @@ Valid options:
     clean         Removes compiled beam files from apps.
     shell         Runs a shell with project apps and deps in path.
     format        Format all erlang files.
+    dialyzer      Carry out success typing analysis.
     test          Pass 'unit', 'integration' or 'all' flag to test.
 
     If none is passed it runs shell.
