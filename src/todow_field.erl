@@ -61,7 +61,8 @@
 ]).
 
 -export([
-    validate/2
+    validate/2,
+    validate_changeset/3
 ]).
 
 %%------------------------------------------------------------------------------
@@ -147,8 +148,25 @@ validations(#field{validations = Validations}) -> Validations.
 %% @end
 %%------------------------------------------------------------------------------
 
+-spec validate(
+    Field :: t(), Value :: any()
+) -> todow_validation:validates_result().
+
 validate(#field{validations = Validations}, Value) ->
     todow_validation:validate(Validations, Value).
+
+%%------------------------------------------------------------------------------
+%% @doc Validates changeset by field and value.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec validate_changeset(
+    Changeset :: changeset:t(), Field :: t(), Value :: any()
+) -> changeset:t().
+
+validate_changeset(
+    Changeset, #field{validations = Validations, name = Key}, Value
+) -> todow_changeset:validate(Changeset, Validations, Key, Value).
 
 %%%=============================================================================
 %%% Internal functions
