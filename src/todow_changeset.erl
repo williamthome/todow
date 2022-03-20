@@ -340,7 +340,8 @@ maybe_merge_defaults(new, Changes, Defaults, ValidKeys) ->
         Changes,
         ValidKeys
     );
-maybe_merge_defaults(update, Changes, _Defaults, _ValidKeys) -> Changes.
+maybe_merge_defaults(update, Changes, _Defaults, _ValidKeys) ->
+    Changes.
 
 %%------------------------------------------------------------------------------
 %% @doc Set changeset change.
@@ -370,7 +371,8 @@ set_change(Changeset, Key, Value) ->
 
 maybe_set_change(new, Changeset, Key, _OldValue, NewValue) ->
     set_change(Changeset, Key, NewValue);
-maybe_set_change(_Action, Changeset, _Key, OldValue, OldValue) -> Changeset;
+maybe_set_change(_Action, Changeset, _Key, OldValue, OldValue) ->
+    Changeset;
 maybe_set_change(_Action, Changeset, Key, _OldValue, NewValue) ->
     set_change(Changeset, Key, NewValue).
 

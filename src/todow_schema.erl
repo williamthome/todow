@@ -7,9 +7,7 @@
 %%%-----------------------------------------------------------------------------
 -module(todow_schema).
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
+-include("./include/todow.hrl").
 
 -type name() :: atom().
 -type fields() :: nonempty_list(todow_field:t()).
@@ -145,7 +143,7 @@ validate(Schema, Data, Changes) ->
 -spec validate(Schema :: t(), Changeset :: todow_changeset:t()) -> validate().
 
 validate(Schema, Changeset) ->
-    ChangesetWithValidChanges = todow_changeset:with_valid_changes(Changeset),
+    ValidChanges = todow_changeset:valid_changes(Changeset),
     ChangesetValidated = maps:fold(
         fun(Key, Value, ChangesetAcc) ->
             case field(Schema, Key) of
@@ -156,10 +154,10 @@ validate(Schema, Changeset) ->
             end
         end,
         Changeset,
-        ChangesetWithValidChanges
+        ValidChanges
     ),
     case todow_changeset:is_valid(ChangesetValidated) of
-        true -> {ok, Changeset};
+        true -> {ok, ChangesetValidated};
         false -> {error, todow_changeset:get_errors(Changeset)}
     end.
 
@@ -177,10 +175,11 @@ validate(Schema, Changeset) ->
 defaults(Schema) ->
     lists:foldl(
         fun(Field, Defaults) ->
-            case todow_field:default(Field) of
-                undefined -> Defaults;
-                Default -> maps:put(todow_field:name(Field), Default, Defaults)
-            end
+            maps:put(
+                todow_field:name(Field),
+                todow_field:default(Field),
+                Defaults
+            )
         end,
         #{},
         fields(Schema)
@@ -274,6 +273,27 @@ defaults_test() ->
             todow_field:new(baz, binary, #{default => baz})
         ]
     },
-    ?assertEqual(#{foo => foo, baz => baz}, defaults(Schema)).
+    ?assertEqual(
+        #{foo => foo, bar => undefined, baz => baz},
+        defaults(Schema)
+    ).
+
+validate_test() ->
+    Schema = #schema{
+        name = foo,
+        fields = [
+            todow_field:new(foo, binary, #{default => foo}),
+            todow_field:new(bar, binary),
+            todow_field:new(baz, binary, #{default => baz})
+        ]
+    },
+    ?assertEqual(
+        todow_changeset:new(
+            #{foo => bar, bar => undefined, baz => baz},
+            #{foo => bar, bar => undefined, baz => baz},
+            new
+        ),
+        validate(Schema, maps:new(), #{foo => bar})
+    ).
 
 -endif.
