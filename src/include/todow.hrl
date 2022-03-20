@@ -8,14 +8,14 @@
 -ifdef(TEST).
 -define(INSPECT(What),
   begin
-    ?debugFmt("===\n[~p:~p] ~p\n===\n", [?MODULE, ?LINE, What]),
+    ?debugFmt("\n===\n[~p:~p] ~p\n===\n", [?MODULE, ?LINE, What]),
     What
   end
 ).
 -else.
 -define(INSPECT(What),
   begin
-    io:format("===\n[~p:~p] ~p\n===\n", [?MODULE, ?LINE, What]),
+    io:format("\n===\n[~p:~p] ~p\n===\n", [?MODULE, ?LINE, What]),
     What
   end
 ).
