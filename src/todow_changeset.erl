@@ -1,8 +1,6 @@
 -module(todow_changeset).
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
+-include("./include/todow.hrl").
 
 -type data() :: map().
 -type changes() :: map().
@@ -273,7 +271,7 @@ cast(Data, Changes, ValidKeys, Options) when
                 true ->
                     OldValue = maps:get(Key, Data, undefined),
                     NewValue = todow_utils:maybe_default(Key, Value, Defaults),
-                    maybe_set_change(ChangesetAcc, Key, OldValue, NewValue);
+                    maybe_set_change(Action, ChangesetAcc, Key, OldValue, NewValue);
                 false ->
                     ChangesetAcc
             end
@@ -282,7 +280,7 @@ cast(Data, Changes, ValidKeys, Options) when
             action = Action,
             data = Data
         },
-        maybe_merge_defaults(Action, Changes, Defaults)
+        maybe_merge_defaults(Action, Changes, Defaults, ValidKeys)
     ),
     {ok, set_valid(Changeset)}.
 
@@ -324,11 +322,25 @@ guess_action(Data) when is_map(Data) -> update.
 %%------------------------------------------------------------------------------
 
 -spec maybe_merge_defaults(
-    Action :: new | update, Changes :: changes(), Defaults :: map()
+    Action :: new | update,
+    Changes :: changes(),
+    Defaults :: map(),
+    ValidKeys :: list()
 ) -> map().
 
-maybe_merge_defaults(new, Changes, Defaults) -> maps:merge(Defaults, Changes);
-maybe_merge_defaults(update, Changes, _Defaults) -> Changes.
+maybe_merge_defaults(new, Changes, Defaults, ValidKeys) ->
+    ChangesKeys = maps:keys(Changes),
+    lists:foldl(
+        fun(Key, ChangesAcc) ->
+            case lists:member(Key, ChangesKeys) of
+                true -> ChangesAcc;
+                false -> maps:put(Key, maps:get(Key, Defaults), ChangesAcc)
+            end
+        end,
+        Changes,
+        ValidKeys
+    );
+maybe_merge_defaults(update, Changes, _Defaults, _ValidKeys) -> Changes.
 
 %%------------------------------------------------------------------------------
 %% @doc Set changeset change.
@@ -353,11 +365,14 @@ set_change(Changeset, Key, Value) ->
 %%------------------------------------------------------------------------------
 
 -spec maybe_set_change(
-    Changeset :: t(), Key :: any(), OldValue :: any(), NewValue :: any()
+    Action :: action(), Changeset :: t(), Key :: any(), OldValue :: any(), NewValue :: any()
 ) -> t().
 
-maybe_set_change(Changeset, _Key, OldValue, OldValue) -> Changeset;
-maybe_set_change(Changeset, Key, _OldValue, NewValue) -> set_change(Changeset, Key, NewValue).
+maybe_set_change(new, Changeset, Key, _OldValue, NewValue) ->
+    set_change(Changeset, Key, NewValue);
+maybe_set_change(_Action, Changeset, _Key, OldValue, OldValue) -> Changeset;
+maybe_set_change(_Action, Changeset, Key, _OldValue, NewValue) ->
+    set_change(Changeset, Key, NewValue).
 
 %%------------------------------------------------------------------------------
 %% @doc Maybe put validate error in changeset.
@@ -386,8 +401,14 @@ guess_action_test() ->
     ?assertEqual(update, guess_action(#{foo => bar})).
 
 maybe_merge_defaults_test() ->
-    ?assertEqual(#{foo => bar}, maybe_merge_defaults(new, #{}, #{foo => bar})),
-    ?assertEqual(#{foo => bar}, maybe_merge_defaults(update, #{foo => bar}, #{})).
+    ?assertEqual(
+        #{foo => bar},
+        maybe_merge_defaults(new, #{}, #{foo => bar}, [foo])
+    ),
+    ?assertEqual(
+        #{foo => bar},
+        maybe_merge_defaults(update, #{foo => bar}, #{}, [foo])
+    ).
 
 set_change_test() ->
     ?assertEqual(
@@ -399,11 +420,11 @@ maybe_set_change_test() ->
     Change = #changeset{data = #{foo => bar}, changes = #{foo => bar}},
     ?assertEqual(
         #changeset{data = #{foo => bar}, changes = #{foo => bar}},
-        maybe_set_change(Change, foo, bar, bar)
+        maybe_set_change(update, Change, foo, bar, bar)
     ),
     ?assertEqual(
         #changeset{data = #{foo => baz}, changes = #{foo => baz}},
-        maybe_set_change(Change, foo, bar, baz)
+        maybe_set_change(update, Change, foo, bar, baz)
     ).
 
 put_error_test() ->
