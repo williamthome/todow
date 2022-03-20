@@ -59,7 +59,7 @@
     set_valid/1
 ]).
 -export([
-    with_valid_changes/1,
+    valid_changes/1,
     cast/3, cast/4,
     validate/4
 ]).
@@ -235,9 +235,9 @@ set_valid(Changeset, Valid) -> Changeset#changeset{valid = Valid}.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec with_valid_changes(Changeset :: t()) -> map().
+-spec valid_changes(Changeset :: t()) -> map().
 
-with_valid_changes(#changeset{errors = Errors, changes = Changes}) ->
+valid_changes(#changeset{errors = Errors, changes = Changes}) ->
     maps:without(maps:keys(Errors), Changes).
 
 %%------------------------------------------------------------------------------
@@ -415,7 +415,7 @@ put_error_test() ->
 changes_without_errors_test() ->
     ?assertEqual(
         #{foo => bar},
-        with_valid_changes(#changeset{
+        valid_changes(#changeset{
             changes = #{foo => bar, bar => baz},
             errors = #{bar => baz}
         })
