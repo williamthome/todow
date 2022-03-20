@@ -80,10 +80,12 @@ fields(#schema{fields = Fields}) -> Fields.
 -spec field(Schema :: t(), FieldName :: todow_field:name()) -> field().
 
 field(#schema{fields = Fields}, FieldName) ->
-    case lists:dropwhile(
-        fun(Field) -> todow_field:name(Field) =/= FieldName end,
-        Fields
-    ) of
+    case
+        lists:dropwhile(
+            fun(Field) -> todow_field:name(Field) =/= FieldName end,
+            Fields
+        )
+    of
         [] -> {error, {not_found, FieldName}};
         [Field | _] -> {ok, Field}
     end.
@@ -147,9 +149,10 @@ validate(Schema, Changeset) ->
     ChangesetValidated = maps:fold(
         fun(Key, Value, ChangesetAcc) ->
             case field(Schema, Key) of
-                {error, {not_found, _FieldName}} -> ChangesetAcc;
                 {ok, Field} ->
-                    todow_field:validate_changeset(ChangesetAcc, Field, Value)
+                    todow_field:validate_changeset(ChangesetAcc, Field, Value);
+                {error, {not_found, _FieldName}} ->
+                    ChangesetAcc
             end
         end,
         Changeset,

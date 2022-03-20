@@ -165,8 +165,11 @@ validate(#field{validations = Validations}, Value) ->
 ) -> changeset:t().
 
 validate_changeset(
-    Changeset, #field{validations = Validations, name = Key}, Value
-) -> todow_changeset:validate(Changeset, Validations, Key, Value).
+    Changeset,
+    #field{validations = Validations, name = Key},
+    Value
+) ->
+    todow_changeset:validate(Changeset, Validations, Key, Value).
 
 %%%=============================================================================
 %%% Internal functions
@@ -205,7 +208,8 @@ do_new(#{
 
 do_validations(#{required := true}) ->
     [todow_validation:required_validation() | ?DEFAULT_VALIDATIONS];
-do_validations(_Options) -> ?DEFAULT_VALIDATIONS.
+do_validations(_Options) ->
+    ?DEFAULT_VALIDATIONS.
 
 %%------------------------------------------------------------------------------
 %% @doc Merge options with default options.

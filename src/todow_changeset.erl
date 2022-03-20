@@ -46,11 +46,17 @@
 -export([
     new/0, new/2, new/3, new/4,
     is_changeset/1,
-    get_changes/1, set_changes/2,
-    get_data/1, set_data/2,
-    get_action/1, set_action/2,
-    get_errors/1, with_errors/1, put_error/3,
-    is_valid/1, set_valid/1
+    get_changes/1,
+    set_changes/2,
+    get_data/1,
+    set_data/2,
+    get_action/1,
+    set_action/2,
+    get_errors/1,
+    with_errors/1,
+    put_error/3,
+    is_valid/1,
+    set_valid/1
 ]).
 -export([
     with_valid_changes/1,
@@ -188,7 +194,6 @@ get_errors(#changeset{errors = Errors}) -> Errors.
 -spec with_errors(Payload :: t() | errors()) -> boolean().
 
 with_errors(#changeset{errors = Errors}) -> with_errors(Errors);
-
 with_errors(Errors) -> map_size(Errors) =/= 0.
 
 %%------------------------------------------------------------------------------
@@ -367,7 +372,8 @@ maybe_set_change(Changeset, Key, _OldValue, NewValue) -> set_change(Changeset, K
 
 maybe_put_validate_error({error, Error}, Changeset, Key) ->
     todow_changeset:put_error(Changeset, Key, Error);
-maybe_put_validate_error({ok, _Value}, Changeset, _Key) -> Changeset.
+maybe_put_validate_error({ok, _Value}, Changeset, _Key) ->
+    Changeset.
 
 %%%=============================================================================
 %%% Tests
