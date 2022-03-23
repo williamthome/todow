@@ -4,5 +4,7 @@
 -define(METHOD_PATCH, <<"PATCH">>).
 -define(METHOD_DELETE, <<"DELETE">>).
 
--define(CONTENT_TYPE_HTML, {<<"text">>,<<"html">>,[]}).
--define(CONTENT_TYPE_FORM_URLENCODED, {<<"application">>,<<"x-www-form-urlencoded">>,[]}).
+-define(CONTENT_TYPE_HTML, {<<"text">>, <<"html">>, []}).
+-define(CONTENT_TYPE_FORM_URLENCODED,
+  {<<"application">>, <<"x-www-form-urlencoded">>, []}
+).
