@@ -31,9 +31,10 @@
 ]).
 
 -export([
-    new/2,
+    new/2, new/3,
     name/1,
-    fields/1
+    fields/1,
+    field_names/1
 ]).
 
 -export([
@@ -50,7 +51,21 @@
 
 -spec new(Name :: name(), Fields :: fields()) -> t().
 
-new(Name, Fields) -> #schema{name = Name, fields = Fields}.
+new(Name, Fields) ->
+    new(Name, Fields, maps:new()).
+
+%%------------------------------------------------------------------------------
+%% @doc Schema constructor.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec new(Name :: name(), Fields :: fields(), Options :: map()) -> t().
+
+new(Name, Fields, Options) ->
+    #schema{
+        name = Name,
+        fields = do_fields(Fields, Options)
+    }.
 
 %%------------------------------------------------------------------------------
 %% @doc Get schema name.
@@ -69,6 +84,17 @@ name(#schema{name = Name}) -> Name.
 -spec fields(Schema :: t()) -> fields().
 
 fields(#schema{fields = Fields}) -> Fields.
+
+%%------------------------------------------------------------------------------
+%% @doc Get schema field names.
+%% @end
+%%------------------------------------------------------------------------------
+
+field_names(Schema) ->
+    lists:map(
+        fun todow_field:name/1,
+        fields(Schema)
+    ).
 
 %%------------------------------------------------------------------------------
 %% @doc Get schema field by field name.
@@ -164,6 +190,28 @@ validate(Schema, Changeset) ->
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
+
+%%------------------------------------------------------------------------------
+%% @doc Create fields by options.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec do_fields(Fields :: fields(), Options :: map()) -> fields().
+
+do_fields(Fields, Options) ->
+    maybe_add_timestamp_fields(Fields, Options).
+
+-spec maybe_add_timestamp_fields(
+    Fields :: fields(),
+    Options :: map()
+) -> fields().
+
+maybe_add_timestamp_fields(Fields, #{timestamps := true}) ->
+    CreatedAt = todow_field:new_timestamp_created_at(),
+    UpdatedAt = todow_field:new_timestamp_updated_at(),
+    [CreatedAt, UpdatedAt | Fields];
+maybe_add_timestamp_fields(Fields, _Options) ->
+    Fields.
 
 %%------------------------------------------------------------------------------
 %% @doc Get schema defaults.

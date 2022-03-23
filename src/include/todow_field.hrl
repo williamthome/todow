@@ -1,0 +1,5 @@
+-define(integer, integer).
+-define(binary, binary).
+-define(date, date).
+-define(boolean, boolean).
+-define(id, ?integer).

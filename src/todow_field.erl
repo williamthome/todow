@@ -8,6 +8,7 @@
 -module(todow_field).
 
 -include("./include/todow.hrl").
+-include("./include/todow_field.hrl").
 
 -define(DEFAULT_PRIVATE, false).
 -define(DEFAULT_REQUIRED, false).
@@ -20,11 +21,6 @@
     default => ?DEFAULT_VALUE,
     validations => ?DEFAULT_VALIDATIONS
 }).
-
--define(integer, integer).
--define(binary, binary).
--define(date, date).
--define(boolean, boolean).
 
 -type name() :: atom().
 -type type() :: ?integer | ?binary | ?date | ?boolean.
@@ -55,6 +51,9 @@
 
 -export([
     new/2, new/3,
+    new_id/0,
+    new_timestamp_created_at/0,
+    new_timestamp_updated_at/0,
     name/1,
     type/1,
     private/1,
@@ -90,6 +89,44 @@ new(Name, Type, Options) ->
         type => Type
     },
     do_new(maps:merge(do_options(Options), Args)).
+
+%%------------------------------------------------------------------------------
+%% @doc Field id constructor.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec new_id() -> t().
+
+new_id() -> new(id, ?integer, #{private => true}).
+
+%%------------------------------------------------------------------------------
+%% @doc Field created_at constructor.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec new_timestamp_created_at() -> t().
+
+%% TODO: Apply default only if it's a new one
+new_timestamp_created_at() ->
+    new(
+        created_at,
+        ?date,
+        #{default => fun() -> calendar:universal_time() end}
+    ).
+
+%%------------------------------------------------------------------------------
+%% @doc Field updated_at constructor.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec new_timestamp_updated_at() -> t().
+
+new_timestamp_updated_at() ->
+    new(
+        updated_at,
+        ?date,
+        #{default => fun calendar:universal_time/0}
+    ).
 
 %%------------------------------------------------------------------------------
 %% @doc Get field name.
