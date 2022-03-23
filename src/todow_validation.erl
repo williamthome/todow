@@ -82,10 +82,10 @@ in_range(Value, Min, Max) -> ?in_range(Value, Min, Max).
 -spec validates_required(Value :: any()) -> validates_result().
 
 validates_required(Value) when ?is_defined(Value) ->
-    do_ok(Value);
+    ?OK(Value);
 validates_required(Value) ->
     Msg = "Value is required",
-    do_error(required, Value, Msg).
+    ?ERROR({required, Value, Msg}).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates required constructor.
@@ -104,10 +104,10 @@ required_validation() -> fun validates_required/1.
 -spec validates_is_integer(Value :: any()) -> validates_result().
 
 validates_is_integer(Value) when is_integer(Value) ->
-    do_ok(Value);
+    ?OK(Value);
 validates_is_integer(Value) ->
     Msg = "Value must be an integer.",
-    do_error(is_integer, Value, Msg).
+    ?ERROR({is_integer, Value, Msg}).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is integer constructor.
@@ -126,10 +126,10 @@ is_integer_validation() -> fun validates_is_integer/1.
 -spec validates_is_binary(Value :: any()) -> validates_result().
 
 validates_is_binary(Value) when is_binary(Value) ->
-    do_ok(Value);
+    ?OK(Value);
 validates_is_binary(Value) ->
     Msg = "Value must be a binary.",
-    do_error(is_binary, Value, Msg).
+    ?ERROR({is_binary, Value, Msg}).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is binary constructor.
@@ -150,10 +150,10 @@ is_binary_validation() -> fun validates_is_binary/1.
 ) -> validates_result().
 
 validates_range(Value, Min, Max) when ?in_range(Value, Min, Max) ->
-    do_ok(Value);
+    ?OK(Value);
 validates_range(Value, Min, Max) ->
     Msg = lists:concat(["Value must a number between ", Min, " and ", Max, "."]),
-    do_error(range, Value, Msg).
+    ?ERROR({range, Value, Msg}).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates range constructor.
@@ -174,7 +174,7 @@ range_validation(Min, Max) ->
     Validations :: validations(), Value :: any()
 ) -> validates_result().
 
-validate(Validations, Value) -> do_validate(Validations, Value, do_ok(Value)).
+validate(Validations, Value) -> do_validate(Validations, Value, ?OK(Value)).
 
 %%%=============================================================================
 %%% Internal functions
@@ -196,31 +196,5 @@ do_validate([], _Value, Result) ->
 do_validate(_Validations, _Value, {error, _} = Error) ->
     Error;
 do_validate([Validates | Validations], Value, _Result) ->
-    Result = check_validates_result(Validates(Value)),
+    Result = Validates(Value),
     do_validate(Validations, Value, Result).
-
-%%------------------------------------------------------------------------------
-%% @doc Check if the validates result is valid.
-%% @end
-%%------------------------------------------------------------------------------
-
-check_validates_result({ok, Value}) -> {ok, Value};
-check_validates_result({error, Reason}) -> {error, Reason}.
-
-%%------------------------------------------------------------------------------
-%% @doc Validates ok result constructor.
-%% @end
-%%------------------------------------------------------------------------------
-
--spec do_ok(any()) -> validates_ok().
-
-do_ok(Value) -> ?OK(Value).
-
-%%------------------------------------------------------------------------------
-%% @doc Validates error result constructor.
-%% @end
-%%------------------------------------------------------------------------------
-
--spec do_error(atom(), any(), string()) -> validates_error().
-
-do_error(Reason, Value, Msg) -> ?ERROR({Reason, Value, Msg}).
