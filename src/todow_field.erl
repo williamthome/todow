@@ -106,12 +106,19 @@ new_id() -> new(id, ?integer, #{private => true}).
 
 -spec new_timestamp_created_at() -> t().
 
-%% TODO: Apply default only if it's a new one
 new_timestamp_created_at() ->
     new(
         created_at,
         ?date,
-        #{default => fun() -> calendar:universal_time() end}
+        #{
+            default => fun(Changeset) ->
+                case todow_changeset:is_action_new(Changeset) of
+                    true -> calendar:universal_time();
+                    %% TODO: Find a way to ignore this value on update
+                    false -> undefined
+                end
+            end
+        }
     ).
 
 %%------------------------------------------------------------------------------

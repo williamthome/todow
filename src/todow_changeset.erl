@@ -296,8 +296,7 @@ cast(Data, Changes, ValidKeys, Options) when
             case lists:member(Key, ValidKeys) of
                 true ->
                     OldValue = maps:get(Key, Data, undefined),
-                    %% TODO: Allow functions for defaults
-                    NewValue = todow_utils:maybe_default(Key, Value, Defaults),
+                    NewValue = todow_utils:maybe_default(Key, Value, Defaults, ChangesetAcc),
                     maybe_set_change(Action, ChangesetAcc, Key, OldValue, NewValue);
                 false ->
                     ChangesetAcc

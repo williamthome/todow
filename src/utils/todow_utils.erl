@@ -1,10 +1,8 @@
 -module(todow_utils).
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
+-include("../include/todow.hrl").
 
--export([ maybe_default/2, maybe_default/3 ]).
+-export([ maybe_default/2, maybe_default/3, maybe_default/4 ]).
 
 -spec maybe_default(Value :: any(), Default :: any()) -> any().
 
@@ -13,8 +11,19 @@ maybe_default(Value, _Default) -> Value.
 
 -spec maybe_default(Key :: any(), Value :: any(), Defaults :: map()) -> any().
 
-maybe_default(Key, undefined, Defaults) -> maps:get(Key, Defaults, undefined);
-maybe_default(_Key, Value, _Defaults) -> Value.
+maybe_default(Key, Value, Defaults) ->
+  maybe_default(Key, Value, Defaults, []).
+
+maybe_default(Key, undefined, Defaults, Args) ->
+  Default = maps:get(Key, Defaults, undefined),
+  maybe_default_is_function(Default, Args);
+maybe_default(_Key, Value, _Defaults, _Args) -> Value.
+
+maybe_default_is_function(Default, []) when is_function(Default, 0) ->
+  Default();
+maybe_default_is_function(Default, Args) when is_function(Default, 1) ->
+  Default(Args);
+maybe_default_is_function(Default, _Args) -> Default.
 
 %%%=============================================================================
 %%% Tests
@@ -28,6 +37,12 @@ maybe_default_test() ->
   ?assertEqual(bar, maybe_default(undefined, bar)),
   % maybe_default/3
   ?assertEqual(bar, maybe_default(foo, undefined, #{foo => bar})),
-  ?assertEqual(bar, maybe_default(foo, bar, #{foo => foo})).
+  ?assertEqual(bar, maybe_default(foo, bar, #{foo => foo})),
+  % maybe_default/3
+  ?assertEqual(bar, maybe_default(foo, undefined, #{foo => fun() -> bar end})),
+  ?assertEqual(bar, maybe_default(foo, bar, #{foo => fun() -> foo end})),
+  % maybe_default/4
+  ?assertEqual(bar, maybe_default(foo, undefined, #{foo => fun(Args) -> Args end}, bar)),
+  ?assertEqual(bar, maybe_default(foo, bar, #{foo => fun(Args) -> Args end}, foo)).
 
 -endif.
