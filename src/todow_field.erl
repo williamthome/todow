@@ -7,9 +7,7 @@
 %%%-----------------------------------------------------------------------------
 -module(todow_field).
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
+-include("./include/todow.hrl").
 
 -define(DEFAULT_PRIVATE, false).
 -define(DEFAULT_REQUIRED, false).
@@ -23,8 +21,13 @@
     validations => ?DEFAULT_VALIDATIONS
 }).
 
+-define(integer, integer).
+-define(binary, binary).
+-define(date, date).
+-define(boolean, boolean).
+
 -type name() :: atom().
--type type() :: integer | binary | date | boolean.
+-type type() :: ?integer | ?binary | ?date | ?boolean.
 -type private() :: boolean().
 -type required() :: boolean().
 -type default() :: any().
@@ -84,10 +87,9 @@ new(Name, Type) -> new(Name, Type, maps:new()).
 new(Name, Type, Options) ->
     Args = #{
         name => Name,
-        type => Type,
-        validations => do_validations(Options)
+        type => Type
     },
-    do_new(maps:merge(Args, do_options(Options))).
+    do_new(maps:merge(do_options(Options), Args)).
 
 %%------------------------------------------------------------------------------
 %% @doc Get field name.
@@ -164,11 +166,8 @@ validate(#field{validations = Validations}, Value) ->
     Changeset :: changeset:t(), Field :: t(), Value :: any()
 ) -> changeset:t().
 
-validate_changeset(
-    Changeset,
-    #field{validations = Validations, name = Key},
-    Value
-) ->
+validate_changeset(Changeset, Field = #field{name = Key}, Value) ->
+    Validations = do_validations(Field, Value),
     todow_changeset:validate(Changeset, Validations, Key, Value).
 
 %%%=============================================================================
@@ -200,16 +199,41 @@ do_new(#{
     }.
 
 %%------------------------------------------------------------------------------
-%% @doc Default validations.
+%% @doc Do validations.
 %% @end
 %%------------------------------------------------------------------------------
 
--spec do_validations(Options :: map()) -> validations().
+-spec do_validations(Field :: t(), Value :: any()) -> validations().
 
-do_validations(#{required := true}) ->
-    [todow_validation:required_validation() | ?DEFAULT_VALIDATIONS];
-do_validations(_Options) ->
-    ?DEFAULT_VALIDATIONS.
+do_validations(
+    #field{required = false, validations = Validations},
+    _Value = undefined
+) ->
+    Validations;
+do_validations(
+    Field = #field{validations = Validations},
+    _Value
+) ->
+    Validations0 = maybe_add_type_validation(Field, Validations),
+    maybe_add_required_validation(Field, Validations0).
+
+maybe_add_type_validation(FieldOrType, Validations) ->
+    case get_type_validation(FieldOrType) of
+        undefined -> Validations;
+        TypeValidation -> [TypeValidation | Validations]
+    end.
+
+get_type_validation(#field{type = Type}) -> get_type_validation(Type);
+get_type_validation(?integer) -> todow_validation:is_integer_validation();
+get_type_validation(?binary) -> todow_validation:is_binary_validation();
+get_type_validation(_Unknown) -> undefined.
+
+maybe_add_required_validation(#field{required = Required}, Validations) ->
+    maybe_add_required_validation(Required, Validations);
+maybe_add_required_validation(_Required = true, Validations) ->
+    [todow_validation:required_validation() | Validations];
+maybe_add_required_validation(_Required = false, Validations) ->
+    Validations.
 
 %%------------------------------------------------------------------------------
 %% @doc Merge options with default options.
@@ -218,8 +242,7 @@ do_validations(_Options) ->
 
 -spec do_options(Options :: map()) -> map().
 
-do_options(Options) ->
-    maps:merge(?DEFAULT_OPTIONS, Options).
+do_options(Options) -> maps:merge(?DEFAULT_OPTIONS, Options).
 
 %%%=============================================================================
 %%% Tests
@@ -228,10 +251,20 @@ do_options(Options) ->
 -ifdef(TEST).
 
 new_test() ->
-    ?assertEqual(new(foo, binary), #field{name = foo, type = binary}),
     ?assertEqual(
-        new(foo, binary, #{default => bar}),
-        #field{name = foo, type = binary, default = bar}
+        new(foo, ?binary),
+        #field{
+            name = foo,
+            type = ?binary
+        }
+    ),
+    ?assertEqual(
+        new(foo, ?binary, #{default => <<"bar">>}),
+        #field{
+            name = foo,
+            type = ?binary,
+            default = <<"bar">>
+        }
     ).
 
 -endif.

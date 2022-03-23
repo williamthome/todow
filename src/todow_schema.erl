@@ -156,9 +156,9 @@ validate(Schema, Changeset) ->
         Changeset,
         ValidChanges
     ),
-    case todow_changeset:is_valid(ChangesetValidated) of
+    case not todow_changeset:with_errors(ChangesetValidated) of
         true -> {ok, ChangesetValidated};
-        false -> {error, todow_changeset:get_errors(Changeset)}
+        false -> {error, ChangesetValidated}
     end.
 
 %%%=============================================================================
@@ -268,13 +268,13 @@ defaults_test() ->
     Schema = #schema{
         name = foo,
         fields = [
-            todow_field:new(foo, binary, #{default => foo}),
+            todow_field:new(foo, binary, #{default => <<"foo">>}),
             todow_field:new(bar, binary),
-            todow_field:new(baz, binary, #{default => baz})
+            todow_field:new(baz, binary, #{default => <<"baz">>})
         ]
     },
     ?assertEqual(
-        #{foo => foo, bar => undefined, baz => baz},
+        #{foo => <<"foo">>, bar => undefined, baz => <<"baz">>},
         defaults(Schema)
     ).
 
@@ -282,18 +282,18 @@ validate_test() ->
     Schema = #schema{
         name = foo,
         fields = [
-            todow_field:new(foo, binary, #{default => foo}),
+            todow_field:new(foo, binary, #{default => <<"foo">>}),
             todow_field:new(bar, binary),
-            todow_field:new(baz, binary, #{default => baz})
+            todow_field:new(baz, binary, #{default => <<"baz">>})
         ]
     },
     ?assertEqual(
         todow_changeset:new(
-            #{foo => bar, bar => undefined, baz => baz},
-            #{foo => bar, bar => undefined, baz => baz},
+            #{foo => <<"bar">>, bar => undefined, baz => <<"baz">>},
+            #{foo => <<"bar">>, bar => undefined, baz => <<"baz">>},
             new
         ),
-        validate(Schema, maps:new(), #{foo => bar})
+        validate(Schema, maps:new(), #{foo => <<"bar">>})
     ).
 
 -endif.

@@ -2,12 +2,6 @@
 
 -include("./include/todow.hrl").
 
--type data() :: map().
--type changes() :: map().
--type action() :: new | update | undefined.
--type errors() :: map().
--type valid() :: boolean().
-
 -define(DEFAULT_DATA, maps:new()).
 -define(DEFAULT_CHANGES, maps:new()).
 -define(DEFAULT_ACTION, undefined).
@@ -21,7 +15,15 @@
     valid => ?DEFAULT_VALID
 }).
 
--define(is_cast_action(Action), Action =:= new orelse Action =:= update).
+-define(new, new).
+-define(update, update).
+-define(is_cast_action(Action), Action =:= ?new orelse Action =:= ?update).
+
+-type data() :: map().
+-type changes() :: map().
+-type action() :: ?new | ?update | undefined.
+-type errors() :: map().
+-type valid() :: boolean().
 
 -record(changeset, {
     data = ?DEFAULT_DATA :: data(),
@@ -49,6 +51,8 @@
     get_data/1,
     set_data/2,
     get_action/1,
+    is_action_new/1,
+    is_action_update/1,
     set_action/2,
     get_errors/1,
     with_errors/1,
@@ -164,6 +168,28 @@ set_data(Changeset, Data) -> Changeset#changeset{data = Data}.
 
 get_action(undefined) -> undefined;
 get_action(#changeset{action = Action}) -> Action.
+
+%%------------------------------------------------------------------------------
+%% @doc Is changeset action new.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec is_action_new(Changeset :: t() | action()) -> boolean().
+
+is_action_new(#changeset{action = Action}) -> is_action_new(Action);
+is_action_new(?new) -> true;
+is_action_new(_Action) -> false.
+
+%%------------------------------------------------------------------------------
+%% @doc Is changeset action update.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec is_action_update(Changeset :: t() | action()) -> boolean().
+
+is_action_update(#changeset{action = Action}) -> is_action_update(Action);
+is_action_update(?update) -> true;
+is_action_update(_Action) -> false.
 
 %%------------------------------------------------------------------------------
 %% @doc Set changeset action.
@@ -296,11 +322,9 @@ cast(Data, Changes, ValidKeys, Options) when
     Value :: any()
 ) -> t().
 
-validate(#changeset{action = update} = Changeset, Validations, Key, Value) ->
+validate(Changeset, Validations, Key, Value) ->
     ValidateResult = todow_validation:validate(Validations, Value),
-    maybe_put_validate_error(ValidateResult, Changeset, Key);
-validate(#changeset{action = new} = Changeset, _Validations, _Key, _Value) ->
-    Changeset.
+    maybe_put_validate_error(ValidateResult, Changeset, Key).
 
 %%%=============================================================================
 %%% Internal functions
@@ -311,10 +335,10 @@ validate(#changeset{action = new} = Changeset, _Validations, _Key, _Value) ->
 %% @end
 %%------------------------------------------------------------------------------
 
--spec guess_action(Data :: data()) -> new | update.
+-spec guess_action(Data :: data()) -> ?new | ?update.
 
-guess_action(Data) when map_size(Data) == 0 -> new;
-guess_action(Data) when is_map(Data) -> update.
+guess_action(Data) when map_size(Data) == 0 -> ?new;
+guess_action(Data) when is_map(Data) -> ?update.
 
 %%------------------------------------------------------------------------------
 %% @doc Maybe merge defaults.
@@ -322,7 +346,7 @@ guess_action(Data) when is_map(Data) -> update.
 %%------------------------------------------------------------------------------
 
 -spec maybe_merge_defaults(
-    Action :: new | update,
+    Action :: ?new | ?update,
     Changes :: changes(),
     Defaults :: map(),
     ValidKeys :: list()
@@ -446,17 +470,17 @@ changes_without_errors_test() ->
 
 do_validate_test() ->
     ?assertEqual(
-        #changeset{action = update, errors = #{foo => bar}},
+        #changeset{action = ?update, errors = #{foo => bar}},
         validate(
-            #changeset{action = update},
+            #changeset{action = ?update},
             [fun(bar) -> {error, bar} end],
             foo,
             bar
         )
     ),
     ?assertEqual(
-        #changeset{action = new},
-        validate(#changeset{action = new}, [], any_key, any_value)
+        #changeset{action = ?new},
+        validate(#changeset{action = ?new}, [], any_key, any_value)
     ).
 
 maybe_put_validate_error_test() ->

@@ -2,6 +2,18 @@
 
 -include("./include/todow.hrl").
 
+-define(is_defined(Value),
+    Value =/= undefined andalso Value =/= "" andalso Value =/= <<>>
+).
+
+-define(is_not_empty(Value),
+    ?is_defined(Value) andalso Value =/= []
+).
+
+-define(in_range(Value, Min, Max),
+    is_number(Value) andalso Value >= Min andalso Value =< Max
+).
+
 -type validates_ok() :: {ok, any()}.
 -type validates_error() :: {error, {atom(), any(), string()}}.
 -type validates_result() :: validates_ok() | validates_error().
@@ -17,33 +29,50 @@
 ]).
 
 -export([
+    is_defined/1,
+    is_not_empty/1,
+    in_range/3
+]).
+-export([
     validates_required/1,
     validates_is_integer/1,
+    validates_is_binary/1,
     validates_range/3
 ]).
 -export([
     required_validation/0,
     is_integer_validation/0,
+    is_binary_validation/0,
     range_validation/2
 ]).
 -export([validate/2]).
 
--define(is_defined(Value),
-    Value =/= undefined andalso
-        Value =/= "" andalso
-        Value =/= <<>>
-).
+%%------------------------------------------------------------------------------
+%% @doc Check if value is defined.
+%% @end
+%%------------------------------------------------------------------------------
 
--define(is_not_empty(Value),
-    ?is_defined(Value) andalso
-        Value =/= []
-).
+-spec is_defined(Value :: any()) -> boolean().
 
--define(in_range(Value, Min, Max),
-    is_number(Value) andalso
-        Value >= Min andalso
-        Value =< Max
-).
+is_defined(Value) -> ?is_defined(Value).
+
+%%------------------------------------------------------------------------------
+%% @doc Check if value is not empty.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec is_not_empty(Value :: any()) -> boolean().
+
+is_not_empty(Value) -> ?is_not_empty(Value).
+
+%%------------------------------------------------------------------------------
+%% @doc Check if value is not empty.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec in_range(Value :: any(), Min :: number(), Max :: number()) -> boolean().
+
+in_range(Value, Min, Max) -> ?in_range(Value, Min, Max).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates if the value is defined.
@@ -65,8 +94,7 @@ validates_required(Value) ->
 
 -spec required_validation() -> validates().
 
-required_validation() ->
-    fun validates_required/1.
+required_validation() -> fun validates_required/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates if the value is of integer type.
@@ -88,8 +116,29 @@ validates_is_integer(Value) ->
 
 -spec is_integer_validation() -> validates().
 
-is_integer_validation() ->
-    fun validates_is_integer/1.
+is_integer_validation() -> fun validates_is_integer/1.
+
+%%------------------------------------------------------------------------------
+%% @doc Validates if the value is of binary type.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec validates_is_binary(Value :: any()) -> validates_result().
+
+validates_is_binary(Value) when is_binary(Value) ->
+    do_ok(Value);
+validates_is_binary(Value) ->
+    Msg = "Value must be a binary.",
+    do_error(is_binary, Value, Msg).
+
+%%------------------------------------------------------------------------------
+%% @doc Validates is binary constructor.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec is_binary_validation() -> validates().
+
+is_binary_validation() -> fun validates_is_binary/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates number range.
@@ -125,8 +174,7 @@ range_validation(Min, Max) ->
     Validations :: validations(), Value :: any()
 ) -> validates_result().
 
-validate(Validations, Value) ->
-    do_validate(Validations, Value, do_ok(Value)).
+validate(Validations, Value) -> do_validate(Validations, Value, do_ok(Value)).
 
 %%%=============================================================================
 %%% Internal functions
