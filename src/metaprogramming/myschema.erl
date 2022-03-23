@@ -1,5 +1,5 @@
 -module(myschema).
--include("../include/schema.hrl").
+-include("./meta_schema.hrl").
 -export([ my_function/0 ]).
 
 -schema(#{
