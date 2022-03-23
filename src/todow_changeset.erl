@@ -19,6 +19,8 @@
 -define(update, update).
 -define(is_cast_action(Action), Action =:= ?new orelse Action =:= ?update).
 
+-define(ignore_default, ignore_default).
+
 -type data() :: map().
 -type changes() :: map().
 -type action() :: ?new | ?update | undefined.
@@ -63,7 +65,8 @@
 -export([
     valid_changes/1,
     cast/3, cast/4,
-    validate/4
+    validate/4,
+    ignore_default/0
 ]).
 
 %%------------------------------------------------------------------------------
@@ -326,6 +329,13 @@ validate(Changeset, Validations, Key, Value) ->
     ValidateResult = todow_validation:validate(Validations, Value),
     maybe_put_validate_error(ValidateResult, Changeset, Key).
 
+%%------------------------------------------------------------------------------
+%% @doc Flag to not update using default value. Useful for function as default.
+%% @end
+%%------------------------------------------------------------------------------
+
+ignore_default() -> ?ignore_default.
+
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
@@ -393,6 +403,8 @@ set_change(Changeset, Key, Value) ->
     Action :: action(), Changeset :: t(), Key :: any(), OldValue :: any(), NewValue :: any()
 ) -> t().
 
+maybe_set_change(_Action, Changeset, _Key, _OldValue, ?ignore_default) ->
+    Changeset;
 maybe_set_change(new, Changeset, Key, _OldValue, NewValue) ->
     set_change(Changeset, Key, NewValue);
 maybe_set_change(_Action, Changeset, _Key, OldValue, OldValue) ->
@@ -451,6 +463,10 @@ maybe_set_change_test() ->
     ?assertEqual(
         #changeset{data = #{foo => baz}, changes = #{foo => baz}},
         maybe_set_change(update, Change, foo, bar, baz)
+    ),
+    ?assertEqual(
+        #changeset{data = #{foo => bar}, changes = #{foo => bar}},
+        maybe_set_change(update, Change, foo, bar, ?ignore_default)
     ).
 
 put_error_test() ->

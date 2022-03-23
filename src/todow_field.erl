@@ -114,8 +114,7 @@ new_timestamp_created_at() ->
             default => fun(Changeset) ->
                 case todow_changeset:is_action_new(Changeset) of
                     true -> calendar:universal_time();
-                    %% TODO: Find a way to ignore this value on update
-                    false -> undefined
+                    false -> todow_changeset:ignore_default()
                 end
             end
         }
