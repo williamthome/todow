@@ -2,6 +2,8 @@
 
 set -e
 
+sitename=todow
+
 case $1 in
   ""|shell)
     rebar3 shell
@@ -26,8 +28,13 @@ case $1 in
       integration)
         rebar3 ct
       ;;
+      site)
+        ../../bin/zotonic start
+        ../../bin/zotonic sitetest $sitename
+        ../../bin/zotonic stop
+      ;;
       all)
-        $0 test unit && $0 test integration
+        $0 test unit && $0 test integration && $0 test site
       ;;
       *)
       echo "
@@ -38,7 +45,8 @@ Error:
 Valid options:
     unit          Run unit tests.
     integration   Run integration tests.
-    all           Run unit an integration tests.
+    site          Run site tests.
+    all           Run all tests.
 
     If none is passed it runs unit tests.
 --------------------------------------------------------------------------------
@@ -60,7 +68,7 @@ Valid options:
     shell         Runs a shell with project apps and deps in path.
     format        Format all erlang files.
     dialyzer      Carry out success typing analysis.
-    test          Pass 'unit', 'integration' or 'all' flag to test.
+    test          Pass 'unit', 'integration', 'site' or 'all' flag to test.
 
     If none is passed it runs shell.
 --------------------------------------------------------------------------------
