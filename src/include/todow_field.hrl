@@ -1,5 +1,9 @@
 -define(integer, integer).
+-define(float, float).
+-define(number, number).
 -define(binary, binary).
--define(date, date).
 -define(boolean, boolean).
+-define(date, date).
+-define(time, time).
+-define(datetime, datetime).
 -define(id, ?integer).

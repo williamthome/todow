@@ -3,10 +3,10 @@
 -import(todow_validation, [
     validates_required/1,
     validates_is_integer/1,
+    validates_is_float/1,
+    validates_is_number/1,
     validates_is_binary/1,
     validates_is_boolean/1,
-    validates_is_number/1,
-    validates_is_float/1,
     validates_is_date/1,
     validates_is_time/1,
     validates_is_datetime/1,
@@ -26,6 +26,15 @@ validates_is_integer_test() ->
     ?assertMatch({error, _}, validates_is_integer(undefined)),
     ?assertMatch({ok, 0}, validates_is_integer(0)).
 
+validates_is_float_test() ->
+    ?assertMatch({error, _}, validates_is_float(0)),
+    ?assertMatch({ok, 0.0}, validates_is_float(0.0)).
+
+validates_is_number_test() ->
+    ?assertMatch({error, _}, validates_is_number(undefined)),
+    ?assertMatch({ok, 0}, validates_is_number(0)),
+    ?assertMatch({ok, 0.0}, validates_is_number(0.0)).
+
 validates_is_binary_test() ->
     ?assertMatch({error, _}, validates_is_binary(undefined)),
     ?assertMatch({ok, <<>>}, validates_is_binary(<<>>)).
@@ -34,15 +43,6 @@ validates_is_boolean_test() ->
     ?assertMatch({error, _}, validates_is_boolean(undefined)),
     ?assertMatch({ok, true}, validates_is_boolean(true)),
     ?assertMatch({ok, false}, validates_is_boolean(false)).
-
-validates_is_number_test() ->
-    ?assertMatch({error, _}, validates_is_number(undefined)),
-    ?assertMatch({ok, 0}, validates_is_number(0)),
-    ?assertMatch({ok, 0.0}, validates_is_number(0.0)).
-
-validates_is_float_test() ->
-    ?assertMatch({error, _}, validates_is_float(0)),
-    ?assertMatch({ok, 0.0}, validates_is_float(0.0)).
 
 validates_is_date_test() ->
     ?assertMatch({error, _}, validates_is_date(undefined)),

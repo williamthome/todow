@@ -65,10 +65,10 @@
 -export([
     validates_required/1,
     validates_is_integer/1,
+    validates_is_float/1,
+    validates_is_number/1,
     validates_is_binary/1,
     validates_is_boolean/1,
-    validates_is_number/1,
-    validates_is_float/1,
     validates_is_date/1,
     validates_is_time/1,
     validates_is_datetime/1,
@@ -77,10 +77,10 @@
 -export([
     required_validation/0,
     is_integer_validation/0,
+    is_float_validation/0,
+    is_number_validation/0,
     is_binary_validation/0,
     is_boolean_validation/0,
-    is_number_validation/0,
-    is_float_validation/0,
     is_date_validation/0,
     is_time_validation/0,
     is_datetime_validation/0,
@@ -160,6 +160,41 @@ validates_is_integer(Value) ->
 is_integer_validation() -> fun validates_is_integer/1.
 
 %%------------------------------------------------------------------------------
+%% @doc Validates if the value is of float type.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec validates_is_float(Value :: any()) -> validates_result().
+
+validates_is_float(Value) when is_float(Value) ->
+    ?OK(Value);
+validates_is_float(Value) ->
+    Msg = "Value must be a float.",
+    ?ERROR({is_float, Value, Msg}).
+
+%%------------------------------------------------------------------------------
+%% @doc Validates if the value is of number type.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec validates_is_number(Value :: any()) -> validates_result().
+
+validates_is_number(Value) when is_number(Value) ->
+    ?OK(Value);
+validates_is_number(Value) ->
+    Msg = "Value must be a number.",
+    ?ERROR({is_number, Value, Msg}).
+
+%%------------------------------------------------------------------------------
+%% @doc Validates is number constructor.
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec is_number_validation() -> validates().
+
+is_number_validation() -> fun validates_is_number/1.
+
+%%------------------------------------------------------------------------------
 %% @doc Validates if the value is of binary type.
 %% @end
 %%------------------------------------------------------------------------------
@@ -202,41 +237,6 @@ validates_is_boolean(Value) ->
 -spec is_boolean_validation() -> validates().
 
 is_boolean_validation() -> fun validates_is_boolean/1.
-
-%%------------------------------------------------------------------------------
-%% @doc Validates if the value is of number type.
-%% @end
-%%------------------------------------------------------------------------------
-
--spec validates_is_number(Value :: any()) -> validates_result().
-
-validates_is_number(Value) when is_number(Value) ->
-    ?OK(Value);
-validates_is_number(Value) ->
-    Msg = "Value must be a number.",
-    ?ERROR({is_number, Value, Msg}).
-
-%%------------------------------------------------------------------------------
-%% @doc Validates is number constructor.
-%% @end
-%%------------------------------------------------------------------------------
-
--spec is_number_validation() -> validates().
-
-is_number_validation() -> fun validates_is_number/1.
-
-%%------------------------------------------------------------------------------
-%% @doc Validates if the value is of float type.
-%% @end
-%%------------------------------------------------------------------------------
-
--spec validates_is_float(Value :: any()) -> validates_result().
-
-validates_is_float(Value) when is_float(Value) ->
-    ?OK(Value);
-validates_is_float(Value) ->
-    Msg = "Value must be a float.",
-    ?ERROR({is_float, Value, Msg}).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is float constructor.

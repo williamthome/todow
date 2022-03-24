@@ -268,7 +268,13 @@ maybe_add_type_validation(FieldOrType, Validations) ->
 
 get_type_validation(#field{type = Type}) -> get_type_validation(Type);
 get_type_validation(?integer) -> todow_validation:is_integer_validation();
+get_type_validation(?float) -> todow_validation:is_float_validation();
+get_type_validation(?number) -> todow_validation:is_number_validation();
 get_type_validation(?binary) -> todow_validation:is_binary_validation();
+get_type_validation(?boolean) -> todow_validation:is_boolean_validation();
+get_type_validation(?date) -> todow_validation:is_date_validation();
+get_type_validation(?time) -> todow_validation:is_time_validation();
+get_type_validation(?datetime) -> todow_validation:is_datetime_validation();
 get_type_validation(_Unknown) -> undefined.
 
 maybe_add_required_validation(#field{required = Required}, Validations) ->
