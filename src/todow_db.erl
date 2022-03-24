@@ -1,5 +1,8 @@
 -module(todow_db).
 
+-include("./include/todow.hrl").
+
+-type payload() :: {list(atom()), list(any())} | map() | list({atom(), any()}).
 -type not_quote(Type) :: {not_quote, Type}.
 -type not_quote() :: not_quote(any()).
 -type maybe_quote() :: not_quote() | null | string().
@@ -19,7 +22,7 @@
     reformat_query/1,
     schema/0,
     comma_separated/1,
-    insert/3, insert/4, insert/5, insert/6
+    insert/2, insert/3, insert/4, insert/5
 ]).
 
 -define(schema, public).
@@ -140,45 +143,46 @@ columns_to_string(Columns) -> not_quoted_comma_separated(Columns).
 
 values_to_string(Values) -> not_quoted_comma_separated(maybe_quote_mult(Values)).
 
+%%------------------------------------------------------------------------------
+%% @doc Inserts data into db.
+%% @end
+%%------------------------------------------------------------------------------
+
 -spec insert(
-    TableName :: atom(), Columns :: list(atom()), Values :: list()
+    TableName :: atom(), Payload :: payload()
 ) -> {ok, pos_integer()} | {error, any()}.
 
-insert(TableName, Columns, Values) ->
-    insert(?schema, TableName, Columns, Values).
+insert(TableName, Payload) -> insert(?schema, TableName, Payload).
 
 -spec insert(
     Schema :: atom(),
     TableName :: atom(),
-    Columns :: list(atom()),
-    Values :: list()
+    Payload :: payload()
 ) -> {ok, pos_integer()} | {error, any()}.
 
-insert(Schema, TableName, Columns, Values) ->
-    insert(Schema, TableName, Columns, Values, id, #{cast => integer}).
+insert(Schema, TableName, Payload) ->
+    insert(Schema, TableName, Payload, id, #{cast => integer}).
 
 -spec insert(
     TableName :: atom(),
-    Columns :: list(atom()),
-    Values :: list(),
+    Payload :: payload(),
     Returning :: atom(),
     Options :: insert_options()
 ) -> insert_result().
 
-insert(TableName, Columns, Values, Returning, Options) ->
-    insert(?schema, TableName, Columns, Values, Returning, Options).
+insert(TableName, Payload, Returning, Options) ->
+    insert(?schema, TableName, Payload, Returning, Options).
 
 -spec insert(
     Schema :: atom(),
     TableName :: atom(),
-    Columns :: list(atom()),
-    Values :: list(),
+    Payload :: payload(),
     Returning :: atom(),
     Options :: insert_options()
 ) -> insert_result().
 
-% TODO: Refactor Columns and Values to be maps or proplists
-insert(Schema, TableName, Columns, Values, Returning, Options) ->
+insert(Schema, TableName, Payload, Returning, Options) ->
+    {Columns, Values} = do_columns_and_values(Payload),
     ColumnsAsString = columns_to_string(Columns),
     ValuesAsString = values_to_string(Values),
     Query = "INSERT INTO $1.$2 ($3) VALUES ($4) RETURNING $5",
@@ -217,3 +221,35 @@ process_insert_result_options(Value, #{cast := integer}) ->
     todow_convert_utils:must_to_integer(Value);
 process_insert_result_options(Value, #{}) ->
     Value.
+
+do_columns_and_values(Map) when is_map(Map) ->
+    {lists:reverse(maps:keys(Map)), lists:reverse(maps:values(Map))};
+
+do_columns_and_values(Proplist) when is_list(Proplist) ->
+    lists:unzip(Proplist);
+
+do_columns_and_values({Columns, Values}) ->
+    {Columns, Values}.
+
+%%%=============================================================================
+%%% Tests
+%%%=============================================================================
+
+-ifdef(TEST).
+
+do_columns_and_values_test() ->
+    Expected = {[foo, bar], [bar, baz]},
+    ?assertEqual(
+        Expected,
+        do_columns_and_values(#{foo => bar, bar => baz})
+    ),
+    ?assertEqual(
+        Expected,
+        do_columns_and_values([{foo, bar}, {bar, baz}])
+    ),
+    ?assertEqual(
+        Expected,
+        do_columns_and_values({[foo, bar], [bar, baz]})
+    ).
+
+-endif.

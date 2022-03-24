@@ -43,7 +43,7 @@ success() ->
 
 test_insert(#{schema := Schema}) ->
   Expected = {ok, 1},
-  Result = todow_db:insert(Schema, todos, [title], ["mytodo"]),
+  Result = todow_db:insert(Schema, todos, {[title], ["mytodo"]}),
   assertEqual("Ensure insert todo", Expected, Result).
 
 %%%=============================================================================
