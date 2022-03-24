@@ -177,6 +177,7 @@ insert(TableName, Columns, Values, Returning, Options) ->
     Options :: insert_options()
 ) -> insert_result().
 
+% TODO: Refactor Columns and Values to be maps or proplists
 insert(Schema, TableName, Columns, Values, Returning, Options) ->
     ColumnsAsString = columns_to_string(Columns),
     ValuesAsString = values_to_string(Values),
