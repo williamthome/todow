@@ -31,6 +31,7 @@
 -spec equery(Query :: string(), Params :: list(), Transaction :: any()) -> any().
 
 equery(Query, Params, Transaction) ->
+    % TODO: Change module to be a gen_server and set this as an adapter
     z_db:squery(format_query(Query, Params), Transaction).
 
 -spec equery(Query :: string(), Params :: list()) -> any().
