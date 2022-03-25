@@ -19,10 +19,10 @@
 -define(is_day(D), is_integer(D) andalso D >= 1 andalso D =< 31).
 -define(is_date(Date),
     is_tuple(Date) andalso
-    tuple_size(Date) =:= 3 andalso
-    ?is_year(element(1, Date)) andalso
-    ?is_month(element(2, Date)) andalso
-    ?is_day(element(3, Date))
+        tuple_size(Date) =:= 3 andalso
+        ?is_year(element(1, Date)) andalso
+        ?is_month(element(2, Date)) andalso
+        ?is_day(element(3, Date))
 ).
 
 -define(is_hour(H), is_integer(H) andalso H >= 0 andalso H < 24).
@@ -30,17 +30,17 @@
 -define(is_second(S), is_integer(S) andalso S >= 0 andalso S < 60).
 -define(is_time(Time),
     is_tuple(Time) andalso
-    tuple_size(Time) =:= 3 andalso
-    ?is_hour(element(1, Time)) andalso
-    ?is_minute(element(2, Time)) andalso
-    ?is_second(element(3, Time))
+        tuple_size(Time) =:= 3 andalso
+        ?is_hour(element(1, Time)) andalso
+        ?is_minute(element(2, Time)) andalso
+        ?is_second(element(3, Time))
 ).
 
 -define(is_datetime(DateTime),
     is_tuple(DateTime) andalso
-    tuple_size(DateTime) =:= 2 andalso
-    ?is_date(element(1, DateTime)) andalso
-    ?is_time(element(2, DateTime))
+        tuple_size(DateTime) =:= 2 andalso
+        ?is_date(element(1, DateTime)) andalso
+        ?is_time(element(2, DateTime))
 ).
 
 -type validates_ok() :: {ok, any()}.
