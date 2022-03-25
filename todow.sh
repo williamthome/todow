@@ -1,11 +1,75 @@
 #!/bin/sh
 
-set -e
-
 sitename=todow
 
+print_separator() {
+  echo "--------------------------------------------------------------------------------"
+}
+
+print_todow() {
+  echo " _____         _
+|_   _|__   __| | _____      __
+  | |/ _ \ / _  |/ _ \ \ /\ / /
+  | | (_) | (_| | (_) \ V  V /
+  |_|\___/ \__,_|\___/ \_/\_/
+"
+}
+
+print_empty_command() {
+  echo "A command is expected.\n"
+}
+
+print_invalid_command() {
+  echo "Error: '$1' it's an invalid command.\n"
+}
+
+maybe_print_invalid_command() {
+  [ -z $1 ] && print_empty_command || print_invalid_command $1
+}
+
+print_default_command() {
+  echo "\n\tIf none is passed it runs $1."
+}
+
+print_commands_label() {
+  echo "Valid commands:"
+}
+
+print_command() {
+  printf "\t%-15s%s\n" "$1" "$2"
+}
+
+print_main_info() {
+  print_separator
+  print_todow
+  maybe_print_invalid_command $1
+  print_commands_label
+  print_command "compile" "Compile the needed dependencies and the project's apps .app.src and .erl files."
+  print_command "clean" "Removes compiled beam files from apps."
+  print_command "shell" "Runs a shell with project apps and deps in path."
+  print_command "format" "Format all erlang files."
+  print_command "dialyzer" "Carry out success typing analysis."
+  print_command "test" "Pass 'unit', 'integration', 'site' or 'all' flag to test."
+  print_separator
+}
+
+print_test_info() {
+  print_separator
+  print_todow
+  maybe_print_invalid_command $1
+  print_commands_label
+  print_command "unit" "Run unit tests."
+  print_command "integration" "Run integration tests."
+  print_command "site" "Run site tests."
+  print_command "all" "Run all tests."
+  print_default_command "unit"
+  print_separator
+}
+
+set -e
+
 case $1 in
-  ""|shell)
+  shell)
     rebar3 shell
   ;;
   compile)
@@ -37,42 +101,13 @@ case $1 in
         $0 test unit && $0 test integration && $0 test site
       ;;
       *)
-      echo "
---------------------------------------------------------------------------------
-Error:
-    $2 is invalid.
-
-Valid options:
-    unit          Run unit tests.
-    integration   Run integration tests.
-    site          Run site tests.
-    all           Run all tests.
-
-    If none is passed it runs unit tests.
---------------------------------------------------------------------------------
-"
-      exit 1
-    ;;
+        print_test_info $2
+        exit 1
+      ;;
     esac
   ;;
   *)
-    echo "
---------------------------------------------------------------------------------
-Error:
-    $1 is invalid.
-
-Valid options:
-    compile       Compile the needed dependencies and the project's
-                  apps .app.src and .erl files.
-    clean         Removes compiled beam files from apps.
-    shell         Runs a shell with project apps and deps in path.
-    format        Format all erlang files.
-    dialyzer      Carry out success typing analysis.
-    test          Pass 'unit', 'integration', 'site' or 'all' flag to test.
-
-    If none is passed it runs shell.
---------------------------------------------------------------------------------
-"
+    print_main_info $1
     exit 1
   ;;
 esac
