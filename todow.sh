@@ -94,6 +94,7 @@ case $1 in
       ;;
       site)
         ../../bin/zotonic start
+        sleep 1
         ../../bin/zotonic sitetest $sitename
         ../../bin/zotonic stop
       ;;

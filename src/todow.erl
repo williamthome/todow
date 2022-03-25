@@ -16,10 +16,10 @@
 %% limitations under the License.
 
 -module(todow).
--author("").
+-author("William Fank Thomé <williamthome@hotmail.com>").
 
--mod_title("todow zotonic site").
--mod_description("An empty Zotonic site, to base your site on.").
+-mod_title("todow").
+-mod_description("A todo app in erlang.").
 -mod_prio(10).
 -mod_schema(1).
 

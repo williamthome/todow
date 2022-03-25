@@ -48,7 +48,6 @@
 %% @doc Schema constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new(Name :: name(), Fields :: fields()) -> t().
 
 new(Name, Fields) ->
@@ -58,7 +57,6 @@ new(Name, Fields) ->
 %% @doc Schema constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new(Name :: name(), Fields :: fields(), Options :: map()) -> t().
 
 new(Name, Fields, Options) ->
@@ -71,7 +69,6 @@ new(Name, Fields, Options) ->
 %% @doc Get schema name.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec name(Schema :: t()) -> name().
 
 name(#schema{name = Name}) -> Name.
@@ -80,7 +77,6 @@ name(#schema{name = Name}) -> Name.
 %% @doc Get schema fields.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec fields(Schema :: t()) -> fields().
 
 fields(#schema{fields = Fields}) -> Fields.
@@ -89,6 +85,7 @@ fields(#schema{fields = Fields}) -> Fields.
 %% @doc Get schema field names.
 %% @end
 %%------------------------------------------------------------------------------
+-spec field_names(Schema :: t()) -> list(todow_field:name()).
 
 field_names(Schema) ->
     lists:map(
@@ -100,7 +97,6 @@ field_names(Schema) ->
 %% @doc Get schema field by field name.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec field(Schema :: t(), FieldName :: todow_field:name()) -> field().
 
 field(#schema{fields = Fields}, FieldName) ->
@@ -118,7 +114,6 @@ field(#schema{fields = Fields}, FieldName) ->
 %% @doc Returns true if field name it's a schema field.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_field(Schema :: t(), FieldName :: todow_field:name()) -> boolean().
 
 is_field(Schema, FieldName) ->
@@ -128,7 +123,6 @@ is_field(Schema, FieldName) ->
 %% @doc Cast schema changes to changeset.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec cast(Schema :: t(), Changes :: map()) -> {ok, todow_changeset:t()}.
 
 cast(Schema, Changes) -> cast(Schema, Changes, maps:new()).
@@ -137,7 +131,6 @@ cast(Schema, Changes) -> cast(Schema, Changes, maps:new()).
 %% @doc Cast schema changes to changeset.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec cast(
     Schema :: t(), Data :: map(), Changes :: map()
 ) -> {ok, todow_changeset:t()}.
@@ -154,7 +147,6 @@ cast(Schema, Data, Changes) ->
 %% @doc Validates schema.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validate(Schema :: t(), Data :: map(), Changes :: map()) -> validate().
 
 validate(Schema, Data, Changes) ->
@@ -165,7 +157,6 @@ validate(Schema, Data, Changes) ->
 %% @doc Validates schema.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validate(Schema :: t(), Changeset :: todow_changeset:t()) -> validate().
 
 validate(Schema, Changeset) ->
@@ -195,12 +186,10 @@ validate(Schema, Changeset) ->
 %% @doc Create fields by options.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec do_fields(Fields :: fields(), Options :: map()) -> fields().
 
 do_fields(Fields, Options) ->
     maybe_add_timestamp_fields(Fields, Options).
-
 -spec maybe_add_timestamp_fields(
     Fields :: fields(),
     Options :: map()
@@ -217,7 +206,6 @@ maybe_add_timestamp_fields(Fields, _Options) ->
 %% @doc Get schema defaults.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec defaults(Schema :: t()) -> map().
 
 defaults(Schema) ->
@@ -237,7 +225,6 @@ defaults(Schema) ->
 %% @doc Filter schema fields.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec filtermap_fields(
     BooleanCallback :: fun((Field :: todow_field:t()) -> boolean()),
     Schema :: t()
@@ -258,7 +245,6 @@ filtermap_fields(BooleanCallback, Schema) ->
 %% @doc Get schema not private fields.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec not_private_fields(Schema :: t()) -> fields().
 
 not_private_fields(Schema) ->
@@ -271,7 +257,6 @@ not_private_fields(Schema) ->
 %% @doc Get schema not private fields name.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec not_private_fields_name(Schema :: t()) -> list(todow_field:name()).
 
 not_private_fields_name(Schema) ->

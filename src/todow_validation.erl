@@ -92,7 +92,6 @@
 %% @doc Check if value is defined.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_defined(Value :: any()) -> boolean().
 
 is_defined(Value) -> ?is_defined(Value).
@@ -101,7 +100,6 @@ is_defined(Value) -> ?is_defined(Value).
 %% @doc Check if value is not empty.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_not_empty(Value :: any()) -> boolean().
 
 is_not_empty(Value) -> ?is_not_empty(Value).
@@ -110,7 +108,6 @@ is_not_empty(Value) -> ?is_not_empty(Value).
 %% @doc Check if value is not empty.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec in_range(Value :: any(), Min :: number(), Max :: number()) -> boolean().
 
 in_range(Value, Min, Max) -> ?in_range(Value, Min, Max).
@@ -119,7 +116,6 @@ in_range(Value, Min, Max) -> ?in_range(Value, Min, Max).
 %% @doc Validates if the value is defined.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validates_required(Value :: any()) -> validates_result().
 
 validates_required(Value) when ?is_defined(Value) ->
@@ -132,7 +128,6 @@ validates_required(Value) ->
 %% @doc Validates required constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec required_validation() -> validates().
 
 required_validation() -> fun validates_required/1.
@@ -141,7 +136,6 @@ required_validation() -> fun validates_required/1.
 %% @doc Validates if the value is of integer type.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validates_is_integer(Value :: any()) -> validates_result().
 
 validates_is_integer(Value) when is_integer(Value) ->
@@ -154,7 +148,6 @@ validates_is_integer(Value) ->
 %% @doc Validates is integer constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_integer_validation() -> validates().
 
 is_integer_validation() -> fun validates_is_integer/1.
@@ -163,7 +156,6 @@ is_integer_validation() -> fun validates_is_integer/1.
 %% @doc Validates if the value is of float type.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validates_is_float(Value :: any()) -> validates_result().
 
 validates_is_float(Value) when is_float(Value) ->
@@ -176,7 +168,6 @@ validates_is_float(Value) ->
 %% @doc Validates if the value is of number type.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validates_is_number(Value :: any()) -> validates_result().
 
 validates_is_number(Value) when is_number(Value) ->
@@ -189,7 +180,6 @@ validates_is_number(Value) ->
 %% @doc Validates is number constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_number_validation() -> validates().
 
 is_number_validation() -> fun validates_is_number/1.
@@ -198,7 +188,6 @@ is_number_validation() -> fun validates_is_number/1.
 %% @doc Validates if the value is of binary type.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validates_is_binary(Value :: any()) -> validates_result().
 
 validates_is_binary(Value) when is_binary(Value) ->
@@ -211,7 +200,6 @@ validates_is_binary(Value) ->
 %% @doc Validates is binary constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_binary_validation() -> validates().
 
 is_binary_validation() -> fun validates_is_binary/1.
@@ -220,7 +208,6 @@ is_binary_validation() -> fun validates_is_binary/1.
 %% @doc Validates if the value is of boolean type.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validates_is_boolean(Value :: any()) -> validates_result().
 
 validates_is_boolean(Value) when is_boolean(Value) ->
@@ -233,7 +220,6 @@ validates_is_boolean(Value) ->
 %% @doc Validates is boolean constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_boolean_validation() -> validates().
 
 is_boolean_validation() -> fun validates_is_boolean/1.
@@ -242,7 +228,6 @@ is_boolean_validation() -> fun validates_is_boolean/1.
 %% @doc Validates is float constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_float_validation() -> validates().
 
 is_float_validation() -> fun validates_is_float/1.
@@ -251,7 +236,6 @@ is_float_validation() -> fun validates_is_float/1.
 %% @doc Validates if the value is of date type.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validates_is_date(Value :: any()) -> validates_result().
 
 validates_is_date(Value) when ?is_date(Value) ->
@@ -264,7 +248,6 @@ validates_is_date(Value) ->
 %% @doc Validates is date constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_date_validation() -> validates().
 
 is_date_validation() -> fun validates_is_date/1.
@@ -273,7 +256,6 @@ is_date_validation() -> fun validates_is_date/1.
 %% @doc Validates if the value is of time type.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validates_is_time(Value :: any()) -> validates_result().
 
 validates_is_time(Value) when ?is_time(Value) ->
@@ -286,7 +268,6 @@ validates_is_time(Value) ->
 %% @doc Validates is time constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_time_validation() -> validates().
 
 is_time_validation() -> fun validates_is_time/1.
@@ -295,7 +276,6 @@ is_time_validation() -> fun validates_is_time/1.
 %% @doc Validates if the value is of datetime type.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validates_is_datetime(Value :: any()) -> validates_result().
 
 validates_is_datetime(Value) when ?is_datetime(Value) ->
@@ -308,7 +288,6 @@ validates_is_datetime(Value) ->
 %% @doc Validates is datetime constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_datetime_validation() -> validates().
 
 is_datetime_validation() -> fun validates_is_datetime/1.
@@ -317,7 +296,6 @@ is_datetime_validation() -> fun validates_is_datetime/1.
 %% @doc Validates number range.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validates_range(
     Value :: any(), Min :: integer(), Max :: integer()
 ) -> validates_result().
@@ -332,7 +310,6 @@ validates_range(Value, Min, Max) ->
 %% @doc Validates range constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec range_validation(Min :: integer(), Max :: integer()) -> validates().
 
 range_validation(Min, Max) ->
@@ -342,7 +319,6 @@ range_validation(Min, Max) ->
 %% @doc Validate by recursion. Halts on the first error.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validate(
     Validations :: validations(), Value :: any()
 ) -> validates_result().
@@ -357,11 +333,8 @@ validate(Validations, Value) -> do_validate(Validations, Value, ?OK(Value)).
 %% @doc Process the validate/2 result.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec do_validate(
-    Validations :: validations(),
-    Value :: any(),
-    Result :: validates_result()
+    Validations :: validations(), Value :: any(), Result :: validates_result()
 ) -> validates_result().
 
 do_validate([], _Value, Result) ->

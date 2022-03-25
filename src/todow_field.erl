@@ -23,7 +23,16 @@
 }).
 
 -type name() :: atom().
--type type() :: ?integer | ?binary | ?date | ?boolean.
+-type type() ::
+    ?integer
+    | ?float
+    | ?number
+    | ?binary
+    | ?boolean
+    | ?date
+    | ?time
+    | ?datetime
+    | ?id.
 -type private() :: boolean().
 -type required() :: boolean().
 -type default() :: any().
@@ -71,7 +80,6 @@
 %% @doc Field constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new(Name :: name(), Type :: type()) -> t().
 
 new(Name, Type) -> new(Name, Type, maps:new()).
@@ -80,7 +88,6 @@ new(Name, Type) -> new(Name, Type, maps:new()).
 %% @doc Field constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new(Name :: name(), Type :: type(), Options :: map()) -> t().
 
 new(Name, Type, Options) ->
@@ -94,7 +101,6 @@ new(Name, Type, Options) ->
 %% @doc Field id constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new_id() -> t().
 
 new_id() -> new(id, ?integer, #{private => true}).
@@ -103,7 +109,6 @@ new_id() -> new(id, ?integer, #{private => true}).
 %% @doc Field created_at constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new_timestamp_created_at() -> t().
 
 new_timestamp_created_at() ->
@@ -124,7 +129,6 @@ new_timestamp_created_at() ->
 %% @doc Field updated_at constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new_timestamp_updated_at() -> t().
 
 new_timestamp_updated_at() ->
@@ -138,7 +142,6 @@ new_timestamp_updated_at() ->
 %% @doc Get field name.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec name(Field :: t()) -> name().
 
 name(#field{name = Name}) -> Name.
@@ -147,7 +150,6 @@ name(#field{name = Name}) -> Name.
 %% @doc Get field type.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec type(Field :: t()) -> type().
 
 type(#field{type = Type}) -> Type.
@@ -156,7 +158,6 @@ type(#field{type = Type}) -> Type.
 %% @doc Get field private.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec private(Field :: t()) -> private().
 
 private(#field{private = Private}) -> Private.
@@ -165,7 +166,6 @@ private(#field{private = Private}) -> Private.
 %% @doc Get field required.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec required(Field :: t()) -> required().
 
 required(#field{required = Required}) -> Required.
@@ -174,7 +174,6 @@ required(#field{required = Required}) -> Required.
 %% @doc Get field default.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec default(Field :: t()) -> default().
 
 default(#field{default = Default}) -> Default.
@@ -183,7 +182,6 @@ default(#field{default = Default}) -> Default.
 %% @doc Get field validations.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validations(Field :: t()) -> validations().
 
 validations(#field{validations = Validations}) -> Validations.
@@ -192,7 +190,6 @@ validations(#field{validations = Validations}) -> Validations.
 %% @doc Validates field value.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validate(
     Field :: t(), Value :: any()
 ) -> todow_validation:validates_result().
@@ -204,7 +201,6 @@ validate(#field{validations = Validations}, Value) ->
 %% @doc Validates changeset by field and value.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validate_changeset(
     Changeset :: changeset:t(), Field :: t(), Value :: any()
 ) -> changeset:t().
@@ -221,7 +217,6 @@ validate_changeset(Changeset, Field = #field{name = Key}, Value) ->
 %% @doc Field constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec do_new(Args :: map()) -> t().
 
 do_new(#{
@@ -245,7 +240,6 @@ do_new(#{
 %% @doc Do validations.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec do_validations(Field :: t(), Value :: any()) -> validations().
 
 do_validations(
@@ -257,14 +251,27 @@ do_validations(
     Field = #field{validations = Validations},
     _Value
 ) ->
-    Validations0 = maybe_add_type_validation(Field, Validations),
+    Validations0 = add_type_validation(Field, Validations),
     maybe_add_required_validation(Field, Validations0).
 
-maybe_add_type_validation(FieldOrType, Validations) ->
-    case get_type_validation(FieldOrType) of
-        undefined -> Validations;
-        TypeValidation -> [TypeValidation | Validations]
-    end.
+%%------------------------------------------------------------------------------
+%% @doc Maybe add the type validation to validations list.
+%% @end
+%%------------------------------------------------------------------------------
+-spec add_type_validation(
+    FieldOrType :: t() | type(), Validations :: validations()
+) -> validations().
+
+add_type_validation(FieldOrType, Validations) ->
+    [get_type_validation(FieldOrType) | Validations].
+
+%%------------------------------------------------------------------------------
+%% @doc If valid type, returns the type validation.
+%% @end
+%%------------------------------------------------------------------------------
+-spec get_type_validation(
+    FieldOrType :: t() | type()
+) -> todow_validation:validates() | undefined.
 
 get_type_validation(#field{type = Type}) -> get_type_validation(Type);
 get_type_validation(?integer) -> todow_validation:is_integer_validation();
@@ -274,8 +281,15 @@ get_type_validation(?binary) -> todow_validation:is_binary_validation();
 get_type_validation(?boolean) -> todow_validation:is_boolean_validation();
 get_type_validation(?date) -> todow_validation:is_date_validation();
 get_type_validation(?time) -> todow_validation:is_time_validation();
-get_type_validation(?datetime) -> todow_validation:is_datetime_validation();
-get_type_validation(_Unknown) -> undefined.
+get_type_validation(?datetime) -> todow_validation:is_datetime_validation().
+
+%%------------------------------------------------------------------------------
+%% @doc Maybe add required validation to validations list.
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_add_required_validation(
+    FieldOrBoolean :: t() | boolean(), Validations :: validations()
+) -> validations().
 
 maybe_add_required_validation(#field{required = Required}, Validations) ->
     maybe_add_required_validation(Required, Validations);
@@ -288,7 +302,6 @@ maybe_add_required_validation(_Required = false, Validations) ->
 %% @doc Merge options with default options.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec do_options(Options :: map()) -> map().
 
 do_options(Options) -> maps:merge(?DEFAULT_OPTIONS, Options).

@@ -73,7 +73,6 @@
 %% @doc Changeset constructor with defaults.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new() -> t().
 
 new() -> #changeset{}.
@@ -82,7 +81,6 @@ new() -> #changeset{}.
 %% @doc Changeset constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new(Data :: data(), Changes :: changes()) -> {ok, t()}.
 
 new(Data, Changes) -> new(Data, Changes, guess_action(Data)).
@@ -91,7 +89,6 @@ new(Data, Changes) -> new(Data, Changes, guess_action(Data)).
 %% @doc Changeset constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new(Data :: data(), Changes :: changes(), Action :: action()) -> {ok, t()}.
 
 new(Data, Changes, Action) -> new(Data, Changes, Action, maps:new()).
@@ -100,7 +97,6 @@ new(Data, Changes, Action) -> new(Data, Changes, Action, maps:new()).
 %% @doc Changeset constructor.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec new(
     Data :: data(), Changes :: changes(), Action :: action(), Errors :: errors()
 ) -> {ok, t()}.
@@ -119,7 +115,6 @@ new(Data, Changes, Action, Errors) ->
 %% @doc Check if is changeset record.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_changeset(Unknown :: any()) -> boolean().
 
 is_changeset(Unknown) -> is_record(Unknown, changeset).
@@ -128,7 +123,6 @@ is_changeset(Unknown) -> is_record(Unknown, changeset).
 %% @doc Get changeset changes.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec get_changes(Changeset :: t()) -> map().
 
 get_changes(undefined) -> undefined;
@@ -138,7 +132,6 @@ get_changes(#changeset{changes = Changes}) -> Changes.
 %% @doc Set changeset changes.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec set_changes(Changeset :: t(), Changes :: changes()) -> t().
 
 set_changes(Changeset, Changes) -> Changeset#changeset{changes = Changes}.
@@ -147,7 +140,6 @@ set_changes(Changeset, Changes) -> Changeset#changeset{changes = Changes}.
 %% @doc Get changeset data.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec get_data(Changeset :: t()) -> map().
 
 get_data(undefined) -> undefined;
@@ -157,7 +149,6 @@ get_data(#changeset{data = Data}) -> Data.
 %% @doc Set changeset data.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec set_data(Changeset :: t(), Data :: data()) -> t().
 
 set_data(Changeset, Data) -> Changeset#changeset{data = Data}.
@@ -166,7 +157,6 @@ set_data(Changeset, Data) -> Changeset#changeset{data = Data}.
 %% @doc Get changeset action.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec get_action(Changeset :: t()) -> action().
 
 get_action(undefined) -> undefined;
@@ -176,7 +166,6 @@ get_action(#changeset{action = Action}) -> Action.
 %% @doc Is changeset action new.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_action_new(Changeset :: t() | action()) -> boolean().
 
 is_action_new(#changeset{action = Action}) -> is_action_new(Action);
@@ -187,7 +176,6 @@ is_action_new(_Action) -> false.
 %% @doc Is changeset action update.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_action_update(Changeset :: t() | action()) -> boolean().
 
 is_action_update(#changeset{action = Action}) -> is_action_update(Action);
@@ -198,7 +186,6 @@ is_action_update(_Action) -> false.
 %% @doc Set changeset action.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec set_action(Changeset :: t(), Action :: action()) -> t().
 
 set_action(Changeset, Action) -> Changeset#changeset{action = Action}.
@@ -207,7 +194,6 @@ set_action(Changeset, Action) -> Changeset#changeset{action = Action}.
 %% @doc Get changeset errors.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec get_errors(Changeset :: t()) -> map().
 
 get_errors(undefined) -> undefined;
@@ -217,7 +203,6 @@ get_errors(#changeset{errors = Errors}) -> Errors.
 %% @doc Returns true if changeset errors have values.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec with_errors(Payload :: t() | errors()) -> boolean().
 
 with_errors(#changeset{errors = Errors}) -> with_errors(Errors);
@@ -227,7 +212,6 @@ with_errors(Errors) -> map_size(Errors) =/= 0.
 %% @doc Returns true if changeset is valid, otherwise false.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec is_valid(Changeset :: t()) -> valid().
 
 is_valid(undefined) -> false;
@@ -237,7 +221,6 @@ is_valid(#changeset{valid = Valid}) -> Valid.
 %% @doc Put an error for the given key into the changeset.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec put_error(Changeset :: t(), Key :: any(), Error :: any()) -> t().
 
 put_error(Changeset, Key, Error) ->
@@ -248,11 +231,14 @@ put_error(Changeset, Key, Error) ->
 %% @doc Set changeset action.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec set_valid(Changeset :: t()) -> t().
 
 set_valid(Changeset) -> set_valid(Changeset, not with_errors(Changeset)).
 
+%%------------------------------------------------------------------------------
+%% @doc Set changeset action.
+%% @end
+%%------------------------------------------------------------------------------
 -spec set_valid(Changeset :: t(), Valid :: valid()) -> t().
 
 set_valid(Changeset, Valid) -> Changeset#changeset{valid = Valid}.
@@ -261,7 +247,6 @@ set_valid(Changeset, Valid) -> Changeset#changeset{valid = Valid}.
 %% @doc Returns changeset who only keys of changes are not present in errors.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec valid_changes(Changeset :: t()) -> map().
 
 valid_changes(#changeset{errors = Errors, changes = Changes}) ->
@@ -271,7 +256,6 @@ valid_changes(#changeset{errors = Errors, changes = Changes}) ->
 %% @doc Cast to changeset.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec cast(
     Data :: data(), Changes :: changes(), ValidKeys :: list()
 ) -> {ok, t()}.
@@ -282,7 +266,6 @@ cast(Data, Changes, ValidKeys) -> cast(Data, Changes, ValidKeys, #{}).
 %% @doc Cast to changeset.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec cast(
     Data :: data(), Changes :: changes(), ValidKeys :: list(), Options :: map()
 ) -> {ok, t()}.
@@ -317,7 +300,6 @@ cast(Data, Changes, ValidKeys, Options) when
 %% @doc Validates changeset.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validate(
     Changeset :: t(),
     Validations :: todow:validations(),
@@ -333,6 +315,7 @@ validate(Changeset, Validations, Key, Value) ->
 %% @doc Flag to not update using default value. Useful for function as default.
 %% @end
 %%------------------------------------------------------------------------------
+-spec ignore_default() -> ?ignore_default.
 
 ignore_default() -> ?ignore_default.
 
@@ -344,7 +327,6 @@ ignore_default() -> ?ignore_default.
 %% @doc Guess action.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec guess_action(Data :: data()) -> ?new | ?update.
 
 guess_action(Data) when map_size(Data) == 0 -> ?new;
@@ -354,7 +336,6 @@ guess_action(Data) when is_map(Data) -> ?update.
 %% @doc Maybe merge defaults.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec maybe_merge_defaults(
     Action :: ?new | ?update,
     Changes :: changes(),
@@ -381,10 +362,7 @@ maybe_merge_defaults(update, Changes, _Defaults, _ValidKeys) ->
 %% @doc Set changeset change.
 %% @end
 %%------------------------------------------------------------------------------
-
--spec set_change(
-    Changeset :: t(), Key :: any(), Value :: any()
-) -> t().
+-spec set_change(Changeset :: t(), Key :: any(), Value :: any()) -> t().
 
 set_change(Changeset, Key, Value) ->
     Changes = maps:put(Key, Value, get_changes(Changeset)),
@@ -398,9 +376,12 @@ set_change(Changeset, Key, Value) ->
 %% @doc Maybe set changeset change.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec maybe_set_change(
-    Action :: action(), Changeset :: t(), Key :: any(), OldValue :: any(), NewValue :: any()
+    Action :: action(),
+    Changeset :: t(),
+    Key :: any(),
+    OldValue :: any(),
+    NewValue :: any()
 ) -> t().
 
 maybe_set_change(_Action, Changeset, _Key, _OldValue, ?ignore_default) ->
@@ -416,7 +397,6 @@ maybe_set_change(_Action, Changeset, Key, _OldValue, NewValue) ->
 %% @doc Maybe put validate error in changeset.
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec maybe_put_validate_error(
     Result :: todow_validation:validates_result(),
     Changeset :: t(),

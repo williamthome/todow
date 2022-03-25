@@ -8,8 +8,6 @@ render(FileName, Vars, Context) ->
     Html = z_template:render(FileName, Vars, Context),
     z_context:output(Html, Context).
 
-render(FileName, Context) ->
-    render(FileName, [], Context).
+render(FileName, Context) -> render(FileName, [], Context).
 
-render_not_found(Context) ->
-    render(?TEMPLATE_NOT_FOUND, Context).
+render_not_found(Context) -> render(?TEMPLATE_NOT_FOUND, Context).
