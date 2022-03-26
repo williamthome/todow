@@ -8,8 +8,16 @@
 
 -define(should_quote(Value), is_list(Value) orelse is_binary(Value)).
 
--type columns_and_values_tuple() :: {list(atom()), list(any())}.
--type payload() :: columns_and_values_tuple() | map() | list({atom(), any()}).
+-type id() :: pos_integer().
+-type column() :: atom().
+-type value() :: any().
+-type columns() :: list(column()).
+-type values() :: list(value()).
+-type columns_and_values_tuple() :: {columns(), values()}.
+-type payload() ::
+    columns_and_values_tuple()
+    | map()
+    | list({column(), value()}).
 -type not_quoted(Type) :: {not_quote, Type}.
 -type not_quoted() :: not_quoted(any()).
 -type not_quoted_string() :: not_quoted(string()).
@@ -18,8 +26,10 @@
 -type query_params() :: list().
 -type query() :: query_string() | {query_string(), query_params()}.
 
--type insert_options() :: #{cast => integer}.
--type insert_result() :: {ok, any} | {error, any()}.
+-type options() :: #{cast => integer}.
+-type result(Type) :: {ok, Type} | {error, any()}.
+-type result() :: result(any()).
+-type result_id() :: result(id()).
 
 -export([
     equery/1, equery/2, equery/3,
@@ -32,9 +42,15 @@
     format/1, format/2,
     format_query/1, format_query/2,
     reformat_query/1,
+    format_unquoted/1, format_unquoted/2,
+    format_clause/1, format_clause/2,
+    format_column_value/3,
+    format_column_value_with_equal_separator/2,
+    format_set/1, format_set/2,
     schema/0,
     comma_separated/1,
-    insert/2, insert/3, insert/4, insert/5
+    insert/2, insert/3, insert/4, insert/5,
+    update/7
 ]).
 
 %%------------------------------------------------------------------------------
@@ -199,6 +215,92 @@ format_query(Query, Params) -> format(Query, Params) ++ ";".
 reformat_query(Queries) -> do_reformat_query(Queries, []).
 
 %%------------------------------------------------------------------------------
+%% @doc Formats to unquoted string.
+%% @end
+%%------------------------------------------------------------------------------
+-spec format_unquoted(Query :: query()) -> not_quoted_string().
+
+format_unquoted({Query, Params}) -> format_unquoted(Query, Params);
+format_unquoted(Query) -> format_unquoted(Query, []).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats to unquoted string.
+%% @end
+%%------------------------------------------------------------------------------
+-spec format_unquoted(Query :: query_string(), Params :: query_params()) -> not_quoted_string().
+
+format_unquoted(Query, Params) -> not_quote(format(Query, Params)).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats clause.
+%% @end
+%%------------------------------------------------------------------------------
+-spec format_clause(Query :: query()) -> not_quoted_string().
+
+format_clause({Query, Params}) -> format_clause(Query, Params);
+format_clause(Query) -> format_clause(Query, []).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats clause.
+%% @end
+%%------------------------------------------------------------------------------
+-spec format_clause(Query :: query_string(), Params :: query_params()) -> not_quoted_string().
+
+format_clause(Query, Params) -> format_unquoted(Query, Params).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats column and value with a separator.
+%% @end
+%%------------------------------------------------------------------------------
+-spec format_column_value(
+    Column :: atom(), Separator :: string(), Value :: any()
+) -> string().
+
+format_column_value(Column, Separator, Value) ->
+    format(
+        "$1 $2 $3",
+        [not_quote(Column), not_quote(Separator), Value]
+    ).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats column and value with a equal separator.
+%% @end
+%%------------------------------------------------------------------------------
+-spec format_column_value_with_equal_separator(
+    Column :: atom(), Value :: any()
+) -> string().
+
+format_column_value_with_equal_separator(Column, Value) ->
+    format_column_value(Column, "=", Value).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats payload for set.
+%% @end
+%%------------------------------------------------------------------------------
+-spec format_set(Payload :: payload()) -> not_quoted_string().
+
+format_set(Payload) ->
+    {Columns, Values} = do_columns_and_values(Payload),
+
+    format_set(Columns, Values).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats columns and values for set.
+%% @end
+%%------------------------------------------------------------------------------
+-spec format_set(
+    Columns :: columns(), Values :: values()
+) -> not_quoted_string().
+
+format_set(Columns, Values) ->
+    Set = lists:zipwith(
+        fun format_column_value_with_equal_separator/2,
+        Columns,
+        Values
+    ),
+    not_quote(comma_separated(Set)).
+
+%%------------------------------------------------------------------------------
 %% @doc Returns the db schema.
 %% @end
 %%------------------------------------------------------------------------------
@@ -244,11 +346,34 @@ values_to_string(Values) -> not_quoted_comma_separated(maybe_quote_mult(Values))
 %% @doc Inserts data into db.
 %% @end
 %%------------------------------------------------------------------------------
--spec insert(
-    TableName :: atom(), Payload :: payload()
-) -> {ok, pos_integer()} | {error, any()}.
+-spec insert(Table :: atom(), Payload :: payload()) -> result_id().
 
-insert(TableName, Payload) -> insert(?SCHEMA, TableName, Payload).
+insert(Table, Payload) -> insert(?SCHEMA, Table, Payload).
+
+%%------------------------------------------------------------------------------
+%% @doc Inserts data into db.
+%% @end
+%%------------------------------------------------------------------------------
+-spec insert(
+    Schema :: atom(), Table :: atom(), Payload :: payload()
+) -> result_id().
+
+insert(Schema, Table, Payload) ->
+    insert(Schema, Table, Payload, id, #{cast => integer}).
+
+%%------------------------------------------------------------------------------
+%% @doc Inserts data into db.
+%% @end
+%%------------------------------------------------------------------------------
+-spec insert(
+    Table :: atom(),
+    Payload :: payload(),
+    Returning :: column(),
+    Options :: options()
+) -> result().
+
+insert(Table, Payload, Returning, Options) ->
+    insert(?SCHEMA, Table, Payload, Returning, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc Inserts data into db.
@@ -256,46 +381,35 @@ insert(TableName, Payload) -> insert(?SCHEMA, TableName, Payload).
 %%------------------------------------------------------------------------------
 -spec insert(
     Schema :: atom(),
-    TableName :: atom(),
-    Payload :: payload()
-) -> {ok, pos_integer()} | {error, any()}.
-
-insert(Schema, TableName, Payload) ->
-    insert(Schema, TableName, Payload, id, #{cast => integer}).
-
-%%------------------------------------------------------------------------------
-%% @doc Inserts data into db.
-%% @end
-%%------------------------------------------------------------------------------
--spec insert(
-    TableName :: atom(),
+    Table :: atom(),
     Payload :: payload(),
-    Returning :: atom(),
-    Options :: insert_options()
-) -> insert_result().
+    Returning :: column(),
+    Options :: options()
+) -> result().
 
-insert(TableName, Payload, Returning, Options) ->
-    insert(?SCHEMA, TableName, Payload, Returning, Options).
+insert(Schema, Table, Payload, Returning, Options) ->
+    Query = insert_query(Schema, Table, Payload, Returning),
+    Result = equery(Query),
+    process_result(Result, Options).
 
 %%------------------------------------------------------------------------------
-%% @doc Inserts data into db.
+%% @doc Updates db data.
 %% @end
 %%------------------------------------------------------------------------------
--spec insert(
+-spec update(
     Schema :: atom(),
-    TableName :: atom(),
+    Table :: atom(),
     Payload :: payload(),
-    Returning :: atom(),
-    Options :: insert_options()
-) -> insert_result().
+    ClauseQuery :: query_string(),
+    ClauseParams :: query_params(),
+    Returning :: column(),
+    Options :: options()
+) -> result().
 
-insert(Schema, TableName, Payload, Returning, Options) ->
-    {Columns, Values} = do_columns_and_values_as_string(Payload),
-    Query = "INSERT INTO $1.$2 ($3) VALUES ($4) RETURNING $5",
-    Args = [Schema, TableName, Columns, Values, Returning],
-    QueryFormatted = format_query(Query, Args),
-    Result = equery(QueryFormatted),
-    process_insert_result(Result, Options).
+update(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning, Options) ->
+    Query = update_query(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning),
+    Result = equery(Query),
+    process_result(Result, Options).
 
 %%%=============================================================================
 %%% Internal functions
@@ -318,27 +432,27 @@ do_reformat_query([Query | Queries], Acc) ->
 %% @doc Transform to insert result.
 %% @end
 %%------------------------------------------------------------------------------
--spec process_insert_result(
-    Result :: any(), Options :: insert_options()
-) -> insert_result().
+-spec process_result(
+    Result :: any(), Options :: options()
+) -> result().
 
 % TODO: This converts Zotonic to expected result, but must come from an adapter
-process_insert_result({ok, 1, _Columns, [{Value}]}, Options) ->
-    {ok, process_insert_result_options(Value, Options)};
-process_insert_result({error, _} = Error, _Options) ->
+process_result({ok, 1, _Columns, [{Value}]}, Options) ->
+    {ok, process_result_options(Value, Options)};
+process_result({error, _} = Error, _Options) ->
     Error.
 
 %%------------------------------------------------------------------------------
 %% @doc Transform to insert result by options.
 %% @end
 %%------------------------------------------------------------------------------
--spec process_insert_result_options(
-    Value :: any(), Options :: insert_options()
+-spec process_result_options(
+    Value :: any(), Options :: options()
 ) -> any().
 
-process_insert_result_options(Value, #{cast := integer}) ->
+process_result_options(Value, #{cast := integer}) ->
     todow_convert_utils:must_to_integer(Value);
-process_insert_result_options(Value, #{}) ->
+process_result_options(Value, #{}) ->
     Value.
 
 %%------------------------------------------------------------------------------
@@ -366,6 +480,44 @@ do_columns_and_values_as_string(Payload) ->
     {Columns, Values} = do_columns_and_values(Payload),
     {columns_to_string(Columns), values_to_string(Values)}.
 
+%%------------------------------------------------------------------------------
+%% @doc Formats a query for insert data into db.
+%% @end
+%%------------------------------------------------------------------------------
+-spec insert_query(
+    Schema :: atom(),
+    Table :: atom(),
+    Payload :: payload(),
+    Returning :: column()
+) -> string().
+
+insert_query(Schema, Table, Payload, Returning) ->
+    {Columns, Values} = do_columns_and_values_as_string(Payload),
+    Query = "INSERT INTO $1.$2 ($3) VALUES ($4) RETURNING $5",
+    Params = [Schema, Table, Columns, Values, Returning],
+    format_query(Query, Params).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats a query for update db data.
+%% @end
+%%------------------------------------------------------------------------------
+-spec update_query(
+    Schema :: atom(),
+    Table :: atom(),
+    Payload :: payload(),
+    ClauseQuery :: query_string(),
+    ClauseParams :: query_params(),
+    Returning :: column()
+) -> string().
+
+update_query(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning) ->
+    Set = format_set(Payload),
+    Clause = format_clause(ClauseQuery, ClauseParams),
+    % TODO: Define 'RETURNING' in a fun maybe_returning if returning not undefined
+    Query = "UPDATE $1.$2 SET $3 $4 RETURNING $5",
+    Params = [Schema, Table, Set, Clause, Returning],
+    format_query(Query, Params).
+
 %%%=============================================================================
 %%% Tests
 %%%=============================================================================
@@ -385,6 +537,48 @@ do_columns_and_values_test() ->
     ?assertEqual(
         Expected,
         do_columns_and_values({[foo, bar], [bar, baz]})
+    ).
+
+format_column_value_test() ->
+    ?assertEqual(
+        "foo and a separator between 'bar'",
+        format_column_value(foo, "and a separator between", "bar")
+    ).
+
+format_column_value_with_equal_separator_test() ->
+    ?assertEqual(
+        "foo = 'bar'",
+        format_column_value_with_equal_separator(foo, "bar")
+    ).
+
+format_set_test() ->
+    ?assertEqual(
+        not_quote("foo = 'bar', bar = 1"),
+        format_set([foo, bar], ["bar", 1])
+    ).
+
+insert_query_test() ->
+    ?assertEqual(
+        "INSERT INTO schema.table (foo, bar) VALUES ('bar', 1) RETURNING baz;",
+        insert_query(
+            schema,
+            table,
+            #{foo => "bar", bar => 1},
+            baz
+        )
+    ).
+
+update_query_test() ->
+    ?assertEqual(
+        "UPDATE schema.table SET foo = 'bar', bar = 1 WHERE id = 1 RETURNING baz;",
+        update_query(
+            schema,
+            table,
+            #{foo => "bar", bar => 1},
+            "WHERE id = $1",
+            [1],
+            baz
+        )
     ).
 
 -endif.

@@ -34,7 +34,8 @@ cleanup(#{schema := Schema}) ->
 
 success() ->
   [
-    fun test_insert/1
+    fun test_insert/1,
+    fun test_update/1
   ].
 
 %%%=============================================================================
@@ -43,8 +44,16 @@ success() ->
 
 test_insert(#{schema := Schema}) ->
   Expected = {ok, 1},
-  Result = todow_db:insert(Schema, todos, {[title], ["mytodo"]}),
+  Result = todow_db:insert(Schema, todos, {[title], ["foo"]}),
   assertEqual("Ensure insert todo", Expected, Result).
+
+test_update(#{schema := Schema}) ->
+  todow_db:insert(Schema, todos, {[title], ["foo"]}),
+  Expected = {ok, 1},
+  Result = todow_db:update(
+    Schema, todos, {[title], ["bar"]}, "WHERE id = $1", [1], id, #{cast => integer}
+  ),
+  assertEqual("Ensure update todo", Expected, Result).
 
 %%%=============================================================================
 %%% Helpers
