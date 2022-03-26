@@ -1,15 +1,23 @@
+% TODO: Change to gen_server behavior
 -module(todow_db).
 
 -include("./include/todow.hrl").
 
--define(schema, public).
+-define(SCHEMA, public).
+-define(CONTEXT, todow:context()).
+
 -define(should_quote(Value), is_list(Value) orelse is_binary(Value)).
 
 -type columns_and_values_tuple() :: {list(atom()), list(any())}.
 -type payload() :: columns_and_values_tuple() | map() | list({atom(), any()}).
--type not_quote(Type) :: {not_quote, Type}.
--type not_quote() :: not_quote(any()).
--type maybe_quote() :: not_quote() | null | string().
+-type not_quoted(Type) :: {not_quote, Type}.
+-type not_quoted() :: not_quoted(any()).
+-type not_quoted_string() :: not_quoted(string()).
+-type maybe_quoted() :: not_quoted() | null | string().
+-type query_string() :: string().
+-type query_params() :: list().
+-type query() :: query_string() | {query_string(), query_params()}.
+
 -type insert_options() :: #{cast => integer}.
 -type insert_result() :: {ok, any} | {error, any()}.
 
@@ -33,23 +41,27 @@
 %% @doc Executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec equery(Query :: string()) -> any().
+-spec equery(Query :: query()) -> any().
 
+equery({Query, Params}) -> equery(Query, Params);
 equery(Query) -> equery(Query, []).
 
 %%------------------------------------------------------------------------------
 %% @doc Executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec equery(Query :: string(), Params :: list()) -> any().
+-spec equery(Query :: query_string(), Params :: query_params()) -> any().
 
-equery(Query, Params) -> equery(Query, Params, todow:context()).
+% TODO: Remove equery/2 because context must come from a db adapter
+equery(Query, Params) -> equery(Query, Params, ?CONTEXT).
 
 %%------------------------------------------------------------------------------
 %% @doc Executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec equery(Query :: string(), Params :: list(), Transaction :: any()) -> any().
+-spec equery(
+    Query :: query_string(), Params :: query_params(), Transaction :: any()
+) -> any().
 
 equery(Query, Params, Transaction) ->
     % TODO: Change module to be a gen_server and set this as an adapter
@@ -71,7 +83,7 @@ quote(Value) ->
 %% @doc Wraps the value to prevent quote.
 %% @end
 %%------------------------------------------------------------------------------
--spec not_quote(Value :: any()) -> not_quote().
+-spec not_quote(Value :: any()) -> not_quoted().
 
 not_quote(Value) -> {not_quote, Value}.
 
@@ -79,7 +91,7 @@ not_quote(Value) -> {not_quote, Value}.
 %% @doc Maybe quote the string.
 %% @end
 %%------------------------------------------------------------------------------
--spec maybe_quote(Value :: any()) -> maybe_quote().
+-spec maybe_quote(Value :: any()) -> maybe_quoted().
 
 maybe_quote({not_quote, Value}) ->
     Value;
@@ -97,7 +109,7 @@ maybe_quote(Value) ->
 %% @doc Maybe quote multiple strings.
 %% @end
 %%------------------------------------------------------------------------------
--spec maybe_quote_mult(Values :: list()) -> list(maybe_quote()).
+-spec maybe_quote_mult(Values :: list()) -> list(maybe_quoted()).
 
 maybe_quote_mult(Values) -> [maybe_quote(Value) || Value <- Values].
 
@@ -127,7 +139,7 @@ prepend_symbol(Index) when is_integer(Index) andalso Index >= 1 ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec replace_symbol(
-    Query :: string(), Index :: integer(), Param :: any()
+    Query :: query_string(), Index :: integer(), Param :: any()
 ) -> string().
 
 replace_symbol(Query, Index, Param) when is_list(Query) andalso is_integer(Index) ->
@@ -137,7 +149,7 @@ replace_symbol(Query, Index, Param) when is_list(Query) andalso is_integer(Index
 %% @doc Formats a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec format(Query :: string() | {string(), list()}) -> string().
+-spec format(Query :: query()) -> string().
 
 format({Query, Params}) -> format(Query, Params);
 format(Query) -> format(Query, []).
@@ -146,7 +158,9 @@ format(Query) -> format(Query, []).
 %% @doc Formats a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec format(Query :: string(), Params :: list()) -> string().
+-spec format(
+    Query :: query_string(), Params :: query_params()
+) -> string().
 
 format(Query, Params) ->
     StrippedQuery = strip(Query),
@@ -163,7 +177,7 @@ format(Query, Params) ->
 %% @doc Formats a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec format_query(Query :: string() | {string(), list()}) -> string().
+-spec format_query(Query :: query()) -> string().
 
 format_query({Query, Params}) -> format_query(Query, Params);
 format_query(Query) -> format_query(Query, []).
@@ -172,7 +186,7 @@ format_query(Query) -> format_query(Query, []).
 %% @doc Formats a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec format_query(Query :: string(), Params :: list()) -> string().
+-spec format_query(Query :: query_string(), Params :: query_params()) -> string().
 
 format_query(Query, Params) -> format(Query, Params) ++ ";".
 
@@ -180,7 +194,7 @@ format_query(Query, Params) -> format(Query, Params) ++ ";".
 %% @doc Reduce and format multiple queries to a single one.
 %% @end
 %%------------------------------------------------------------------------------
--spec reformat_query(Queries :: list(string() | {string(), list()})) -> string().
+-spec reformat_query(Queries :: list(query())) -> string().
 
 reformat_query(Queries) -> do_reformat_query(Queries, []).
 
@@ -188,9 +202,10 @@ reformat_query(Queries) -> do_reformat_query(Queries, []).
 %% @doc Returns the db schema.
 %% @end
 %%------------------------------------------------------------------------------
--spec schema() -> ?schema.
+-spec schema() -> ?SCHEMA.
 
-schema() -> ?schema.
+% TODO: Schema must be defined in state when db will be a gen_server
+schema() -> ?SCHEMA.
 
 %%------------------------------------------------------------------------------
 %% @doc Creates a comma separated list.
@@ -205,7 +220,7 @@ comma_separated(List) ->
 %% @doc Creates a comma separated list who never will be quoted.
 %% @end
 %%------------------------------------------------------------------------------
--spec not_quoted_comma_separated(List :: list()) -> not_quote(string()).
+-spec not_quoted_comma_separated(List :: list()) -> not_quoted_string().
 
 not_quoted_comma_separated(List) -> not_quote(comma_separated(List)).
 
@@ -213,7 +228,7 @@ not_quoted_comma_separated(List) -> not_quote(comma_separated(List)).
 %% @doc Convert columns to string.
 %% @end
 %%------------------------------------------------------------------------------
--spec columns_to_string(List :: list()) -> not_quote(string()).
+-spec columns_to_string(List :: list()) -> not_quoted_string().
 
 columns_to_string(Columns) -> not_quoted_comma_separated(Columns).
 
@@ -221,7 +236,7 @@ columns_to_string(Columns) -> not_quoted_comma_separated(Columns).
 %% @doc Convert values to string.
 %% @end
 %%------------------------------------------------------------------------------
--spec values_to_string(List :: list()) -> not_quote(string()).
+-spec values_to_string(List :: list()) -> maybe_quoted().
 
 values_to_string(Values) -> not_quoted_comma_separated(maybe_quote_mult(Values)).
 
@@ -233,7 +248,7 @@ values_to_string(Values) -> not_quoted_comma_separated(maybe_quote_mult(Values))
     TableName :: atom(), Payload :: payload()
 ) -> {ok, pos_integer()} | {error, any()}.
 
-insert(TableName, Payload) -> insert(?schema, TableName, Payload).
+insert(TableName, Payload) -> insert(?SCHEMA, TableName, Payload).
 
 %%------------------------------------------------------------------------------
 %% @doc Inserts data into db.
@@ -260,7 +275,7 @@ insert(Schema, TableName, Payload) ->
 ) -> insert_result().
 
 insert(TableName, Payload, Returning, Options) ->
-    insert(?schema, TableName, Payload, Returning, Options).
+    insert(?SCHEMA, TableName, Payload, Returning, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc Inserts data into db.
@@ -275,11 +290,9 @@ insert(TableName, Payload, Returning, Options) ->
 ) -> insert_result().
 
 insert(Schema, TableName, Payload, Returning, Options) ->
-    {Columns, Values} = do_columns_and_values(Payload),
-    ColumnsAsString = columns_to_string(Columns),
-    ValuesAsString = values_to_string(Values),
+    {Columns, Values} = do_columns_and_values_as_string(Payload),
     Query = "INSERT INTO $1.$2 ($3) VALUES ($4) RETURNING $5",
-    Args = [Schema, TableName, ColumnsAsString, ValuesAsString, Returning],
+    Args = [Schema, TableName, Columns, Values, Returning],
     QueryFormatted = format_query(Query, Args),
     Result = equery(QueryFormatted),
     process_insert_result(Result, Options).
@@ -309,6 +322,7 @@ do_reformat_query([Query | Queries], Acc) ->
     Result :: any(), Options :: insert_options()
 ) -> insert_result().
 
+% TODO: This converts Zotonic to expected result, but must come from an adapter
 process_insert_result({ok, 1, _Columns, [{Value}]}, Options) ->
     {ok, process_insert_result_options(Value, Options)};
 process_insert_result({error, _} = Error, _Options) ->
@@ -339,6 +353,18 @@ do_columns_and_values(Proplist) when is_list(Proplist) ->
     lists:unzip(Proplist);
 do_columns_and_values({Columns, Values}) ->
     {Columns, Values}.
+
+%%------------------------------------------------------------------------------
+%% @doc Parses the payload to a tuple of columns and values as string.
+%% @end
+%%------------------------------------------------------------------------------
+-spec do_columns_and_values_as_string(
+    Payload :: payload()
+) -> {not_quoted_string(), maybe_quoted()}.
+
+do_columns_and_values_as_string(Payload) ->
+    {Columns, Values} = do_columns_and_values(Payload),
+    {columns_to_string(Columns), values_to_string(Values)}.
 
 %%%=============================================================================
 %%% Tests
