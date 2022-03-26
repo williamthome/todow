@@ -23,4 +23,8 @@
 -endif.
 
 -define(OK(Result), {ok, Result}).
+-ifdef(TEST).
+-define(ERROR(Reason), {error, Reason}).
+-else.
 -define(ERROR(Reason), ?INSPECT({error, Reason})).
+-endif.
