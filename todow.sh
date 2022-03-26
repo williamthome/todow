@@ -66,6 +66,56 @@ print_test_info() {
   print_separator
 }
 
+print_site_info() {
+  print_separator
+  print_todow
+  maybe_print_invalid_command $1
+  print_commands_label
+  print_command "compile" "Compiles the erlang site code."
+  print_command "start" "Starts the site."
+  print_command "stop" "Stops the site."
+  print_command "shell" "Site shell if site is running."
+  print_command "debug" "Starts the site in debug mode."
+  print_command "test" "Runs site tests."
+  print_separator
+}
+
+site_command() {
+  [ -z $2 ] && ../../bin/zotonic $1 || ../../bin/zotonic $1 $2
+}
+
+site_compile() { site_command compile ; }
+
+site_start() { site_command start ; }
+
+site_stop() { site_command stop ; }
+
+site_shell() { site_command shell ; }
+
+site_debug() { site_command debug ; }
+
+site_test() { site_command sitetest $sitename ; }
+
+site_wait_start() { sleep 3 ; }
+
+site_ensure_start() {
+  site_start
+  site_wait_start
+}
+
+site_start_and_compile() {
+  site_ensure_start
+  site_compile
+  site_stop
+}
+
+site_start_and_test() {
+  site_ensure_start
+  site_compile
+  site_test
+  site_stop
+}
+
 set -e
 
 case $1 in
@@ -93,16 +143,39 @@ case $1 in
         rebar3 ct
       ;;
       site)
-        ../../bin/zotonic start
-        sleep 1
-        ../../bin/zotonic sitetest $sitename
-        ../../bin/zotonic stop
+        site_start_and_test
       ;;
       all)
         $0 test unit && $0 test integration && $0 test site
       ;;
       *)
         print_test_info $2
+        exit 1
+      ;;
+    esac
+  ;;
+  site)
+    case $2 in
+      compile)
+        site_start_and_compile
+      ;;
+      start)
+        site_start
+      ;;
+      stop)
+        site_stop
+      ;;
+      shell)
+        site_shell
+      ;;
+      debug)
+        site_debug
+      ;;
+      test)
+        site_start_and_test
+      ;;
+      *)
+        print_site_info $2
         exit 1
       ;;
     esac
