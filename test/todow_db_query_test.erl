@@ -1,6 +1,6 @@
--module(todow_db_test).
+-module(todow_db_query_test).
 
--import(todow_db, [
+-import(todow_db_query, [
     quote/1,
     not_quote/1,
     maybe_quote/1,
