@@ -4,7 +4,6 @@
 -include("./include/todow.hrl").
 
 -define(SCHEMA, public).
--define(CONTEXT, todow:context()).
 
 -define(should_quote(Value), is_list(Value) orelse is_binary(Value)).
 
@@ -13,6 +12,13 @@
 -type result(Type) :: {ok, Type} | {error, any()}.
 -type result() :: result(any()).
 -type result_id() :: result(id()).
+
+-export_type([
+    id/0,
+    options/0,
+    result/0,
+    result_id/0
+]).
 
 -export([
     equery/1, equery/2, equery/3,
@@ -37,8 +43,7 @@ equery(Query) -> equery(Query, []).
 %%------------------------------------------------------------------------------
 -spec equery(Query :: string(), Params :: todow_db_query:params()) -> any().
 
-% TODO: Remove equery/2 because context must come from a db adapter
-equery(Query, Params) -> equery(Query, Params, ?CONTEXT).
+equery(Query, Params) -> equery(Query, Params, undefined).
 
 %%------------------------------------------------------------------------------
 %% @doc Executes a query.
@@ -48,12 +53,10 @@ equery(Query, Params) -> equery(Query, Params, ?CONTEXT).
     Query :: string(), Params :: todow_db_query:params(), Transaction :: any()
 ) -> any().
 
-equery(Query, Params, Transaction) ->
-    % TODO: Change module to be a gen_server and set this as an adapter
-    z_db:squery(
-        todow_db_query:format_query(Query, Params),
-        Transaction
-    ).
+equery(Query, Params, _Transaction) ->
+    % TODO: Format query using the transaction
+    QueryToExecute = todow_db_query:format_query(Query, Params),
+    zotonic_db_adapter:equery(QueryToExecute).
 
 %%------------------------------------------------------------------------------
 %% @doc Returns the db schema.
@@ -115,7 +118,7 @@ insert(Table, Payload, Returning, Options) ->
 insert(Schema, Table, Payload, Returning, Options) ->
     Query = todow_db_query:insert_query(Schema, Table, Payload, Returning),
     Result = equery(Query),
-    process_result(Result, Options).
+    zotonic_db_adapter:process_result(Result, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc Updates db data.
@@ -136,7 +139,7 @@ update(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning, Options) ->
         Schema, Table, Payload, ClauseQuery, ClauseParams, Returning
     ),
     Result = equery(Query),
-    process_result(Result, Options).
+    zotonic_db_adapter:process_result(Result, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc Updates db data by id.
@@ -155,30 +158,3 @@ update_by_id(Schema, Table, Id, Payload) ->
     Returning = id,
     Options = #{cast => integer},
     update(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning, Options).
-
-%%%=============================================================================
-%%% Internal functions
-%%%=============================================================================
-
-%%------------------------------------------------------------------------------
-%% @doc Transform to insert result.
-%% @end
-%%------------------------------------------------------------------------------
--spec process_result(Result :: any(), Options :: options()) -> result().
-
-% TODO: This converts Zotonic to expected result, but must come from an adapter
-process_result({ok, 1, _Columns, [{Value}]}, Options) ->
-    {ok, process_result_options(Value, Options)};
-process_result({error, _} = Error, _Options) ->
-    Error.
-
-%%------------------------------------------------------------------------------
-%% @doc Transform to insert result by options.
-%% @end
-%%------------------------------------------------------------------------------
--spec process_result_options(Value :: any(), Options :: options()) -> any().
-
-process_result_options(Value, #{cast := integer}) ->
-    todow_convert_utils:must_to_integer(Value);
-process_result_options(Value, #{}) ->
-    Value.
