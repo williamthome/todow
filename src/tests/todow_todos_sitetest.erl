@@ -4,8 +4,8 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
-%% TODO: Start Zotonic before eunit tests and remove the ?run flag from asserts.
--define(run, is_pid(whereis(zotonic_launcher_sup))).
+%% TODO: Start Zotonic before eunit tests and remove the ?is_site_running flag
+-define(is_site_running, is_pid(whereis(zotonic_launcher_sup))).
 
 %%%=============================================================================
 %%% Setup
@@ -33,10 +33,14 @@ cleanup(#{schema := Schema}) ->
   todow_db_schema:cleanup(Schema).
 
 success() ->
-  [
-    fun test_insert/1,
-    fun test_update/1
-  ].
+  case ?is_site_running of
+    true ->
+      [
+        fun test_insert/1,
+        fun test_update/1
+      ];
+    false -> []
+  end.
 
 %%%=============================================================================
 %%% Tests
@@ -45,25 +49,10 @@ success() ->
 test_insert(#{schema := Schema}) ->
   Expected = {ok, 1},
   Result = todow_db:insert(Schema, todos, {[title], ["foo"]}),
-  assertEqual("Ensure insert todo", Expected, Result).
+  {"Ensure insert todo", ?_assertEqual(Expected, Result)}.
 
 test_update(#{schema := Schema}) ->
   {ok, Id} = todow_db:insert(Schema, todos, {[title], ["foo"]}),
   Expected = {ok, Id},
   Result = todow_db:update_by_id(Schema, todos, Id, {[title], ["bar"]}),
-  assertEqual("Ensure update todo", Expected, Result).
-
-%%%=============================================================================
-%%% Helpers
-%%%=============================================================================
-
-assertEqual(Title, Expected, Result) ->
-  a(Title, ?_assertEqual(Expected, Result)).
-
-a(Title, Assert) ->
-  case ?run of
-    true -> {Title, Assert};
-    false -> {Title, skip_assert()}
-  end.
-
-skip_assert() -> ?_assert(true).
+  {"Ensure update todo", ?_assertEqual(Expected, Result)}.
