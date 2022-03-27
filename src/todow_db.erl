@@ -158,8 +158,12 @@ prepend_symbol(Index) when is_integer(Index) andalso Index >= 1 ->
     Query :: query_string(), Index :: integer(), Param :: any()
 ) -> string().
 
-replace_symbol(Query, Index, Param) when is_list(Query) andalso is_integer(Index) ->
-    lists:concat(string:replace(Query, prepend_symbol(Index), maybe_quote(Param), all)).
+replace_symbol(Query, Index, Param) when
+    is_list(Query) andalso is_integer(Index)
+->
+    lists:concat(
+        string:replace(Query, prepend_symbol(Index), maybe_quote(Param), all)
+    ).
 
 %%------------------------------------------------------------------------------
 %% @doc Formats a query.
@@ -202,7 +206,9 @@ format_query(Query) -> format_query(Query, []).
 %% @doc Formats a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec format_query(Query :: query_string(), Params :: query_params()) -> string().
+-spec format_query(
+    Query :: query_string(), Params :: query_params()
+) -> string().
 
 format_query(Query, Params) -> format(Query, Params) ++ ";".
 
@@ -227,7 +233,9 @@ format_unquoted(Query) -> format_unquoted(Query, []).
 %% @doc Formats to unquoted string.
 %% @end
 %%------------------------------------------------------------------------------
--spec format_unquoted(Query :: query_string(), Params :: query_params()) -> not_quoted_string().
+-spec format_unquoted(
+    Query :: query_string(), Params :: query_params()
+) -> not_quoted_string().
 
 format_unquoted(Query, Params) -> not_quote(format(Query, Params)).
 
@@ -244,7 +252,9 @@ format_clause(Query) -> format_clause(Query, []).
 %% @doc Formats clause.
 %% @end
 %%------------------------------------------------------------------------------
--spec format_clause(Query :: query_string(), Params :: query_params()) -> not_quoted_string().
+-spec format_clause(
+    Query :: query_string(), Params :: query_params()
+) -> not_quoted_string().
 
 format_clause(Query, Params) -> format_unquoted(Query, Params).
 
@@ -281,7 +291,6 @@ format_column_value_with_equal_separator(Column, Value) ->
 
 format_set(Payload) ->
     {Columns, Values} = do_columns_and_values(Payload),
-
     format_set(Columns, Values).
 
 %%------------------------------------------------------------------------------
@@ -340,7 +349,8 @@ columns_to_string(Columns) -> not_quoted_comma_separated(Columns).
 %%------------------------------------------------------------------------------
 -spec values_to_string(List :: list()) -> maybe_quoted().
 
-values_to_string(Values) -> not_quoted_comma_separated(maybe_quote_mult(Values)).
+values_to_string(Values) ->
+    not_quoted_comma_separated(maybe_quote_mult(Values)).
 
 %%------------------------------------------------------------------------------
 %% @doc Inserts data into db.
@@ -407,7 +417,9 @@ insert(Schema, Table, Payload, Returning, Options) ->
 ) -> result().
 
 update(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning, Options) ->
-    Query = update_query(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning),
+    Query = update_query(
+        Schema, Table, Payload, ClauseQuery, ClauseParams, Returning
+    ),
     Result = equery(Query),
     process_result(Result, Options).
 
@@ -432,9 +444,7 @@ do_reformat_query([Query | Queries], Acc) ->
 %% @doc Transform to insert result.
 %% @end
 %%------------------------------------------------------------------------------
--spec process_result(
-    Result :: any(), Options :: options()
-) -> result().
+-spec process_result(Result :: any(), Options :: options()) -> result().
 
 % TODO: This converts Zotonic to expected result, but must come from an adapter
 process_result({ok, 1, _Columns, [{Value}]}, Options) ->
@@ -446,9 +456,7 @@ process_result({error, _} = Error, _Options) ->
 %% @doc Transform to insert result by options.
 %% @end
 %%------------------------------------------------------------------------------
--spec process_result_options(
-    Value :: any(), Options :: options()
-) -> any().
+-spec process_result_options(Value :: any(), Options :: options()) -> any().
 
 process_result_options(Value, #{cast := integer}) ->
     todow_convert_utils:must_to_integer(Value);
