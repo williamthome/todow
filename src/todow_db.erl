@@ -50,7 +50,8 @@
     schema/0,
     comma_separated/1,
     insert/2, insert/3, insert/4, insert/5,
-    update/7
+    update/7,
+    update_by_id/4
 ]).
 
 %%------------------------------------------------------------------------------
@@ -422,6 +423,24 @@ update(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning, Options) ->
     ),
     Result = equery(Query),
     process_result(Result, Options).
+
+%%------------------------------------------------------------------------------
+%% @doc Updates db data by id.
+%% @end
+%%------------------------------------------------------------------------------
+-spec update_by_id(
+    Schema :: atom(),
+    Table :: atom(),
+    Id :: id(),
+    Payload :: payload()
+) -> result().
+
+update_by_id(Schema, Table, Id, Payload) ->
+    ClauseQuery = "WHERE id = $1",
+    ClauseParams = [Id],
+    Returning = id,
+    Options = #{cast => integer},
+    update(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning, Options).
 
 %%%=============================================================================
 %%% Internal functions

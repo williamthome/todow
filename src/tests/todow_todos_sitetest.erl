@@ -48,11 +48,9 @@ test_insert(#{schema := Schema}) ->
   assertEqual("Ensure insert todo", Expected, Result).
 
 test_update(#{schema := Schema}) ->
-  todow_db:insert(Schema, todos, {[title], ["foo"]}),
-  Expected = {ok, 1},
-  Result = todow_db:update(
-    Schema, todos, {[title], ["bar"]}, "WHERE id = $1", [1], id, #{cast => integer}
-  ),
+  {ok, Id} = todow_db:insert(Schema, todos, {[title], ["foo"]}),
+  Expected = {ok, Id},
+  Result = todow_db:update_by_id(Schema, todos, Id, {[title], ["bar"]}),
   assertEqual("Ensure update todo", Expected, Result).
 
 %%%=============================================================================
