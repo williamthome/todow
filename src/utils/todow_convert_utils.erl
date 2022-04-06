@@ -34,6 +34,8 @@ to_integer(Value) -> to_integer(Value, #{}).
   Value :: any(), Options :: map()
 ) -> {ok, integer()} | {error, not_integer}.
 
+to_integer(undefined, _Options) ->
+  ?NOT_INTEGER_ERROR;
 to_integer(Value, _Options) when is_binary(Value) ->
   try
     {ok, erlang:binary_to_integer(Value)}
@@ -101,6 +103,8 @@ to_string(Value) -> to_string(Value, #{}).
   Value :: any(), Options :: map()
 ) -> {ok, string()} | {error, not_string}.
 
+to_string(undefined, _Options) ->
+  ?NOT_STRING_ERROR;
 to_string(Value, _Options) when is_list(Value) ->
   try
     case io_lib:deep_latin1_char_list(Value) of
