@@ -96,21 +96,19 @@ site_debug() { site_command debug ; }
 
 site_test() { site_command sitetest $sitename ; }
 
-site_wait_start() { sleep 3 ; }
-
-site_ensure_start() {
+site_wait_start() {
   site_start
-  site_wait_start
+  site_command wait
 }
 
 site_start_and_compile() {
-  site_ensure_start
+  site_wait_start
   site_compile
   site_stop
 }
 
 site_start_and_test() {
-  site_ensure_start
+  site_wait_start
   site_compile
   site_test
   site_stop
