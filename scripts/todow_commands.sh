@@ -1,5 +1,3 @@
-sitename=todow
-
 site_command() {
   [ -z $2 ] && ../../bin/zotonic $1 || ../../bin/zotonic $1 $2
 }

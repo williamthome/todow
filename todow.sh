@@ -1,5 +1,6 @@
 #!/bin/sh
 
+. ./todow.config
 . ./scripts/todow_printer.sh
 . ./scripts/todow_commands.sh
 
