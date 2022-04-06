@@ -1,7 +1,7 @@
 {application, todow, [
     {description, "Default Zotonic empty site"},
     {vsn, "git"},
-    {registered, [todow_sup]},
+    {registered, []},
     {applications, [kernel, stdlib, zotonic_core]},
     {env, []},
     {modules, []},
