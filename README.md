@@ -4,4 +4,4 @@
 
 ## Commands
 
-Use ./todow.sh script.
+Run ./todow.sh to see the commands.
