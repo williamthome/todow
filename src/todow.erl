@@ -43,7 +43,7 @@ context() -> z:c(todow).
 sudo_context() -> z_acl:sudo(context()).
 
 manage_schema(install, _Context) ->
-    todow_db_schema:create_tables(),
+    todow_db_schema:setup(),
     ok.
 
 manage_data(_Version, _Context) -> ok.
