@@ -25,13 +25,15 @@ init([]) ->
         strategy => one_for_one
     },
     Children = [
-        % TODO: Start db gen_server
-        % #{
-        %     id => todow_db,
-        %     start => {todow_db, start_link, []},
-        %     restart => permanent,
-        %     type => worker
-        % }
+        #{
+            id => todow_db,
+            start =>
+                {todow_db, start_link, [
+                    #{
+                        adapter => zotonic_db_adapter
+                    }
+                ]}
+        }
     ],
     {ok, {SupFlags, Children}}.
 

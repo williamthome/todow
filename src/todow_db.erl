@@ -1,71 +1,155 @@
-% TODO: Change to gen_server behavior
 -module(todow_db).
+-behaviour(gen_server).
 
 -include("./include/todow.hrl").
 
--define(SCHEMA, public).
+-define(SERVER, ?MODULE).
+
+-define(DEFAULT_SCHEMA, public).
+-define(DEFAULT_RETURNING_COLUMN, id).
+-define(DEFAULT_RETURNING_COLUMN_TRANSFORM, fun todow_convert_utils:maybe_to_integer/1).
+-define(DEFAULT_ARGS, #{
+    default_schema => ?DEFAULT_SCHEMA
+}).
+-define(DEFAULT_OPTIONS, #{
+    schema => ?DEFAULT_SCHEMA,
+    returning => #{
+        column => ?DEFAULT_RETURNING_COLUMN,
+        transform => ?DEFAULT_RETURNING_COLUMN_TRANSFORM
+    }
+}).
 
 -define(should_quote(Value), is_list(Value) orelse is_binary(Value)).
 
+-type schema() :: atom().
+-type adapter() :: atom().
+-type init_args() :: #{
+    default_schema => schema(),
+    adapter => adapter()
+}.
 -type id() :: pos_integer().
--type options() :: #{cast => integer}.
+-type column() :: todow_db_query:column().
+-type transform() :: fun((1) -> any()).
+-type returning() ::
+    column()
+    | #{column => column(), transform => transform()}.
+-type options() :: #{
+    schema => schema(),
+    returning => returning()
+}.
 -type result(Type) :: {ok, Type} | {error, any()}.
 -type result() :: result(any()).
--type result_id() :: result(id()).
+-type query_params() :: todow_db_query:params().
+-type payload() :: todow_db_query:payload().
+
+-record(state, {
+    default_schema :: schema(),
+    % -behaviour(todow_db_adapter).
+    adapter :: adapter()
+}).
 
 -export_type([
     id/0,
     options/0,
-    result/0,
-    result_id/0
+    result/0
 ]).
 
+%% API functions
 -export([
-    equery/1, equery/2, equery/3,
-    schema/0,
-    insert/2, insert/3, insert/4, insert/5,
-    update/7,
-    update_by_id/4
+    start_link/1,
+    get_default_schema/0,
+    fquery/2,
+    equery/1, equery/2,
+    fequery/2, fequery/3,
+    insert/2, insert/3,
+    update/4, update/5,
+    update_by_id/3, update_by_id/4
 ]).
 
+%% GenServer callbacks
+-export([
+    init/1,
+    handle_call/3,
+    handle_cast/2,
+    handle_info/2,
+    terminate/2,
+    code_change/3
+]).
+
+%%%=============================================================================
+%%% API functions
+%%%=============================================================================
+-spec start_link(Args :: init_args()) -> gen:start_ret().
+
+start_link(#{default_schema := DefaultSchema, adapter := Adapter}) ->
+    State = #state{
+        default_schema = DefaultSchema,
+        adapter = Adapter
+    },
+    gen_server:start_link({local, ?SERVER}, ?MODULE, State, []);
+start_link(Args) ->
+    start_link(maps:merge(?DEFAULT_ARGS, Args)).
+
+%%------------------------------------------------------------------------------
+%% @doc Returns the default schema.
+%% @end
+%%------------------------------------------------------------------------------
+-spec get_default_schema() -> schema().
+
+get_default_schema() -> gen_server:call(?SERVER, schema).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats a query.
+%% @end
+%%------------------------------------------------------------------------------
+-spec fquery(Query :: string(), Params :: query_params()) -> string().
+
+fquery(Query, Params) -> gen_server:call(?SERVER, {fquery, Query, Params}).
+
 %%------------------------------------------------------------------------------
 %% @doc Executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec equery(Query :: todow_db_query:t()) -> any().
+-spec equery(Query :: string()) -> any().
 
-equery({Query, Params}) -> equery(Query, Params);
-equery(Query) -> equery(Query, []).
-
-%%------------------------------------------------------------------------------
-%% @doc Executes a query.
-%% @end
-%%------------------------------------------------------------------------------
--spec equery(Query :: string(), Params :: todow_db_query:params()) -> any().
-
-equery(Query, Params) -> equery(Query, Params, undefined).
+equery(Query) -> equery(Query, maps:new()).
 
 %%------------------------------------------------------------------------------
 %% @doc Executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec equery(
-    Query :: string(), Params :: todow_db_query:params(), Transaction :: any()
+-spec equery(Query :: string(), Options :: options()) -> any().
+
+equery(Query, Options) -> gen_server:call(?SERVER, {equery, Query, Options}).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats and executes a query.
+%% @end
+%%------------------------------------------------------------------------------
+-spec fequery(Query :: string(), Params :: query_params()) -> any().
+
+fequery(Query, Params) -> fequery(Query, Params, maps:new()).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats and executes a query.
+%% @end
+%%------------------------------------------------------------------------------
+-spec fequery(
+    Query :: string(),
+    Params :: query_params(),
+    Options :: options()
 ) -> any().
 
-equery(Query, Params, _Transaction) ->
-    % TODO: Format query using the transaction
-    QueryToExecute = todow_db_query:format_query(Query, Params),
-    zotonic_db_adapter:equery(QueryToExecute).
+fequery(Query, Params, Options) ->
+    gen_server:call(?SERVER, {fequery, Query, Params, Options}).
 
 %%------------------------------------------------------------------------------
-%% @doc Returns the db schema.
+%% @doc Inserts data into db.
 %% @end
 %%------------------------------------------------------------------------------
--spec schema() -> ?SCHEMA.
+-spec insert(Table :: atom(), Payload :: payload()) -> result().
 
-% TODO: Schema must be defined in state when db will be a gen_server
-schema() -> ?SCHEMA.
+insert(Table, Payload) -> insert(Table, Payload, ?DEFAULT_OPTIONS).
 
 %%------------------------------------------------------------------------------
 %% @doc Inserts data into db.
@@ -73,88 +157,172 @@ schema() -> ?SCHEMA.
 %%------------------------------------------------------------------------------
 -spec insert(
     Table :: atom(),
-    Payload :: todow_db_query:payload()
-) -> result_id().
-
-insert(Table, Payload) -> insert(?SCHEMA, Table, Payload).
-
-%%------------------------------------------------------------------------------
-%% @doc Inserts data into db.
-%% @end
-%%------------------------------------------------------------------------------
--spec insert(
-    Schema :: atom(), Table :: atom(), Payload :: todow_db_query:payload()
-) -> result_id().
-
-insert(Schema, Table, Payload) ->
-    insert(Schema, Table, Payload, id, #{cast => integer}).
-
-%%------------------------------------------------------------------------------
-%% @doc Inserts data into db.
-%% @end
-%%------------------------------------------------------------------------------
--spec insert(
-    Table :: atom(),
-    Payload :: todow_db_query:payload(),
-    Returning :: todow_db_query:column(),
+    Payload :: payload(),
     Options :: options()
 ) -> result().
 
-insert(Table, Payload, Returning, Options) ->
-    insert(?SCHEMA, Table, Payload, Returning, Options).
-
-%%------------------------------------------------------------------------------
-%% @doc Inserts data into db.
-%% @end
-%%------------------------------------------------------------------------------
--spec insert(
-    Schema :: atom(),
-    Table :: atom(),
-    Payload :: todow_db_query:payload(),
-    Returning :: todow_db_query:column(),
-    Options :: options()
-) -> result().
-
-insert(Schema, Table, Payload, Returning, Options) ->
-    Query = todow_db_query:insert_query(Schema, Table, Payload, Returning),
-    Result = equery(Query),
-    zotonic_db_adapter:process_result(Result, Options).
+insert(Table, Payload, Options) ->
+    gen_server:call(?SERVER, {insert, Table, Payload, Options}).
 
 %%------------------------------------------------------------------------------
 %% @doc Updates db data.
 %% @end
 %%------------------------------------------------------------------------------
 -spec update(
-    Schema :: atom(),
     Table :: atom(),
-    Payload :: todow_db_query:payload(),
+    Payload :: payload(),
     ClauseQuery :: string(),
-    ClauseParams :: todow_db_query:params(),
-    Returning :: todow_db_query:column(),
+    ClauseParams :: query_params()
+) -> result().
+
+update(Table, Payload, ClauseQuery, ClauseParams) ->
+    update(Table, Payload, ClauseQuery, ClauseParams, ?DEFAULT_OPTIONS).
+
+%%------------------------------------------------------------------------------
+%% @doc Updates db data.
+%% @end
+%%------------------------------------------------------------------------------
+-spec update(
+    Table :: atom(),
+    Payload :: payload(),
+    ClauseQuery :: string(),
+    ClauseParams :: query_params(),
     Options :: options()
 ) -> result().
 
-update(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning, Options) ->
-    Query = todow_db_query:update_query(
-        Schema, Table, Payload, ClauseQuery, ClauseParams, Returning
-    ),
-    Result = equery(Query),
-    zotonic_db_adapter:process_result(Result, Options).
+update(Table, Payload, ClauseQuery, ClauseParams, Options) ->
+    gen_server:call(
+        ?SERVER,
+        {update, Table, Payload, ClauseQuery, ClauseParams, Options}
+    ).
 
 %%------------------------------------------------------------------------------
 %% @doc Updates db data by id.
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_by_id(
-    Schema :: atom(),
     Table :: atom(),
     Id :: id(),
-    Payload :: todow_db_query:payload()
+    Payload :: payload()
 ) -> result().
 
-update_by_id(Schema, Table, Id, Payload) ->
+update_by_id(Table, Id, Payload) ->
+    update_by_id(Table, Id, Payload, ?DEFAULT_OPTIONS).
+
+%%------------------------------------------------------------------------------
+%% @doc Updates db data by id.
+%% @end
+%%------------------------------------------------------------------------------
+-spec update_by_id(
+    Table :: atom(),
+    Id :: id(),
+    Payload :: payload(),
+    Options :: options()
+) -> result().
+
+update_by_id(Table, Id, Payload, Options) ->
     ClauseQuery = "WHERE id = $1",
     ClauseParams = [Id],
-    Returning = id,
-    Options = #{cast => integer},
-    update(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning, Options).
+    update(Table, Payload, ClauseQuery, ClauseParams, Options).
+
+%%%=============================================================================
+%%% GenServer callbacks
+%%%=============================================================================
+-spec init(State :: #state{}) -> {ok, #state{}}.
+
+init(#state{} = State) -> {ok, State}.
+
+handle_call(schema, _From, #state{default_schema = Schema} = State) ->
+    {reply, Schema, State};
+handle_call({fquery, Query, Params}, _From, State) ->
+    Reply = todow_db_query:format_query(Query, Params),
+    {reply, Reply, State};
+handle_call(
+    {equery, Query, Options},
+    _From,
+    #state{} = State
+) ->
+    Reply = adapter_equery(State, Query, Options),
+    {reply, Reply, State};
+handle_call({fequery, Query, Params, Options}, _From, #state{} = State) ->
+    QueryToExecute = todow_db_query:format_query(Query, Params),
+    Reply = adapter_equery(State, QueryToExecute, Options),
+    {reply, Reply, State};
+handle_call({insert, Table, Payload, Options}, _From, #state{} = State) ->
+    Schema = extract_schema(Options, State),
+    Returning = extract_returning_column(Options),
+    Query = todow_db_query:insert_query(Schema, Table, Payload, Returning),
+    Reply = adapter_equery(State, Query, Options),
+    {reply, Reply, State};
+handle_call(
+    {update, Table, Payload, ClauseQuery, ClauseParams, Options},
+    _From,
+    #state{} = State
+) ->
+    Schema = extract_schema(Options, State),
+    Returning = extract_returning_column(Options),
+    Query = todow_db_query:update_query(
+        Schema, Table, Payload, ClauseQuery, ClauseParams, Returning
+    ),
+    Reply = adapter_equery(State, Query, Options),
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%%%=============================================================================
+%%% Internal functions
+%%%=============================================================================
+
+-spec extract_schema(Options :: options(), #state{}) -> schema().
+
+extract_schema(#{schema := undefined}, #state{default_schema = Schema}) ->
+    Schema;
+extract_schema(#{schema := Schema}, #state{}) ->
+    Schema.
+
+-spec extract_returning_column(Options :: options()) -> column().
+
+extract_returning_column(#{returning := #{column := Column}}) -> Column;
+extract_returning_column(#{returning := Column}) -> Column;
+extract_returning_column(_Options) -> ?DEFAULT_RETURNING_COLUMN.
+
+-spec extract_returning_transform(
+    Options :: options()
+) -> transform() | undefined.
+
+extract_returning_transform(#{returning := #{transform := Transform}}) ->
+    Transform;
+extract_returning_transform(Options) ->
+    case extract_returning_column(Options) =:= ?DEFAULT_RETURNING_COLUMN of
+        true -> ?DEFAULT_RETURNING_COLUMN_TRANSFORM;
+        false -> undefined
+    end.
+
+-spec maybe_transform(Result :: any(), Options :: options()) -> any().
+
+maybe_transform(Result, Options) ->
+    case extract_returning_transform(Options) of
+        undefined -> Result;
+        Transform -> do_transform(Transform, Result)
+    end.
+
+do_transform(_Transform, {error, _Reason} = Error) ->
+    Error;
+do_transform(Transform, {ok, Result}) ->
+    {ok, do_transform(Transform, Result)};
+do_transform(Transform, Result) ->
+    Transform(Result).
+
+adapter_equery(#state{adapter = Adapter}, Query, Options) ->
+    Result = Adapter:equery(Query),
+    maybe_transform(Result, Options).

@@ -1,10 +1,7 @@
 -module(zotonic_db_adapter).
 -behaviour(todow_db_adapter).
 
--export([
-  equery/1,
-  process_result/2
-]).
+-export([ equery/1 ]).
 
 -define(CONTEXT, todow:context()).
 
@@ -14,34 +11,29 @@
 %%------------------------------------------------------------------------------
 -spec equery(Query :: string()) -> any().
 
-equery(Query) -> z_db:squery(Query, ?CONTEXT).
-
-%%------------------------------------------------------------------------------
-%% @doc Transform to insert result.
-%% @end
-%%------------------------------------------------------------------------------
--spec process_result(
-    Result :: any(), Options :: todow_db:options()
-) -> todow_db:result().
-
-process_result({ok, 1, _Columns, [{Value}]}, Options) ->
-    {ok, process_result_options(Value, Options)};
-process_result({error, _} = Error, _Options) ->
-    Error.
+equery(Query) ->
+    Result = z_db:squery(Query, ?CONTEXT),
+    to_db_result(Result).
 
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
 
 %%------------------------------------------------------------------------------
-%% @doc Transform to insert result by options.
+%% @doc Transform to insert result.
 %% @end
 %%------------------------------------------------------------------------------
--spec process_result_options(
-    Value :: any(), Options :: todow_db:options()
-) -> any().
+-spec to_db_result(Result :: any()) -> todow_db:result().
 
-process_result_options(Value, #{cast := integer}) ->
-    todow_convert_utils:must_to_integer(Value);
-process_result_options(Value, #{}) ->
-    Value.
+to_db_result({ok, _, _Column, [{Value}]}) ->
+    {ok, Value};
+to_db_result({ok, _, _Columns, Values}) ->
+    {ok, Values};
+to_db_result({ok, _Column, [{Value}]}) ->
+    {ok, Value};
+to_db_result({ok, _Columns, Values}) ->
+    {ok, Values};
+to_db_result({error, {error, error, _Code, Reason, Msg, _Debug}}) ->
+    {error, {Reason, Msg}};
+to_db_result({error, _} = Error) ->
+    Error.
