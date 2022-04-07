@@ -8,6 +8,12 @@
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
+-define(DB_SPEC(Id, Args),
+  #{
+        id => Id,
+        start => {todow_db, start_link, [Args]}
+    }
+).
 
 %%%=============================================================================
 %%% API functions
@@ -25,15 +31,7 @@ init([]) ->
         strategy => one_for_one
     },
     Children = [
-        #{
-            id => todow_db,
-            start =>
-                {todow_db, start_link, [
-                    #{
-                        adapter => zotonic_db_adapter
-                    }
-                ]}
-        }
+        ?DB_SPEC(todow_db, #{adapter => zotonic_db_adapter})
     ],
     {ok, {SupFlags, Children}}.
 
