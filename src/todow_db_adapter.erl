@@ -1,9 +1,15 @@
 -module(todow_db_adapter).
 
--callback get_connection() -> todow_db:connection().
+-include("./include/todow_db.hrl").
 
--callback equery(Query :: string()) -> todow_db:result().
+-callback get_connection() -> connection().
+
+-callback equery(
+    Connection :: connection(),
+    Query :: query()
+) -> result().
 
 -callback transaction(
-    Connection :: todow_db:connection(), Fun :: todow_db:transaction_fun()
-) -> todow_db:result().
+    Connection :: connection(),
+    Fun :: transaction_fun()
+) -> result().

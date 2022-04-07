@@ -1,42 +1,11 @@
 -module(todow_db_query).
 
 -include("./include/todow.hrl").
+-include("./include/todow_db.hrl").
 
 -define(should_quote(Value), is_list(Value) orelse is_binary(Value)).
 
--type column() :: atom().
--type value() :: any().
--type columns() :: list(column()).
--type values() :: list(value()).
--type columns_and_values_tuple() :: {columns(), values()}.
--type columns_and_values_proplist() :: list({column(), value()}).
--type payload() ::
-    map()
-    | columns_and_values_tuple()
-    | columns_and_values_proplist().
--type not_quoted(Type) :: {not_quote, Type}.
--type not_quoted() :: not_quoted(any()).
--type not_quoted_string() :: not_quoted(string()).
--type maybe_quoted() :: not_quoted() | null | string().
--type params() :: list().
--type t() :: string() | {string(), params()}.
-
--export_type([
-    column/0,
-    value/0,
-    columns/0,
-    values/0,
-    columns_and_values_tuple/0,
-    columns_and_values_proplist/0,
-    payload/0,
-    not_quoted/1,
-    not_quoted/0,
-    not_quoted_string/0,
-    maybe_quoted/0,
-    params/0,
-    t/0
-]).
-
+% TODO: Only export usual functions
 -export([
     quote/1,
     not_quote/1,
@@ -134,7 +103,7 @@ prepend_symbol(Index) when is_integer(Index) andalso Index >= 1 ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec replace_symbol(
-    Query :: string(), Index :: integer(), Param :: any()
+    Query :: query(), Index :: integer(), Param :: query_param()
 ) -> string().
 
 replace_symbol(Query, Index, Param) when
@@ -148,18 +117,15 @@ replace_symbol(Query, Index, Param) when
 %% @doc Formats a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec format(Query :: t()) -> string().
+-spec format(Query :: query()) -> string().
 
-format({Query, Params}) -> format(Query, Params);
 format(Query) -> format(Query, []).
 
 %%------------------------------------------------------------------------------
 %% @doc Formats a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec format(
-    Query :: string(), Params :: params()
-) -> string().
+-spec format(Query :: query(), Params :: query_params()) -> string().
 
 format(Query, Params) ->
     StrippedQuery = strip(Query),
@@ -176,18 +142,15 @@ format(Query, Params) ->
 %% @doc Formats a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec format_query(Query :: t()) -> string().
+-spec format_query(Query :: query()) -> string().
 
-format_query({Query, Params}) -> format_query(Query, Params);
 format_query(Query) -> format_query(Query, []).
 
 %%------------------------------------------------------------------------------
 %% @doc Formats a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec format_query(
-    Query :: string(), Params :: params()
-) -> string().
+-spec format_query(Query :: query(), Params :: query_params()) -> string().
 
 format_query(Query, Params) -> format(Query, Params) ++ ";".
 
@@ -195,7 +158,7 @@ format_query(Query, Params) -> format(Query, Params) ++ ";".
 %% @doc Reduce and format multiple queries to a single one.
 %% @end
 %%------------------------------------------------------------------------------
--spec reformat_query(Queries :: list(t())) -> string().
+-spec reformat_query(Queries :: list(query())) -> string().
 
 reformat_query(Queries) -> do_reformat_query(Queries, []).
 
@@ -203,9 +166,8 @@ reformat_query(Queries) -> do_reformat_query(Queries, []).
 %% @doc Formats to unquoted string.
 %% @end
 %%------------------------------------------------------------------------------
--spec format_unquoted(Query :: t()) -> not_quoted_string().
+-spec format_unquoted(Query :: query()) -> not_quoted_string().
 
-format_unquoted({Query, Params}) -> format_unquoted(Query, Params);
 format_unquoted(Query) -> format_unquoted(Query, []).
 
 %%------------------------------------------------------------------------------
@@ -213,7 +175,7 @@ format_unquoted(Query) -> format_unquoted(Query, []).
 %% @end
 %%------------------------------------------------------------------------------
 -spec format_unquoted(
-    Query :: string(), Params :: params()
+    Query :: query(), Params :: query_params()
 ) -> not_quoted_string().
 
 format_unquoted(Query, Params) -> not_quote(format(Query, Params)).
@@ -222,9 +184,8 @@ format_unquoted(Query, Params) -> not_quote(format(Query, Params)).
 %% @doc Formats clause.
 %% @end
 %%------------------------------------------------------------------------------
--spec format_clause(Query :: t()) -> not_quoted_string().
+-spec format_clause(Query :: query()) -> not_quoted_string().
 
-format_clause({Query, Params}) -> format_clause(Query, Params);
 format_clause(Query) -> format_clause(Query, []).
 
 %%------------------------------------------------------------------------------
@@ -232,7 +193,7 @@ format_clause(Query) -> format_clause(Query, []).
 %% @end
 %%------------------------------------------------------------------------------
 -spec format_clause(
-    Query :: string(), Params :: params()
+    Query :: query(), Params :: query_params()
 ) -> not_quoted_string().
 
 format_clause(Query, Params) -> format_unquoted(Query, Params).
@@ -242,7 +203,7 @@ format_clause(Query, Params) -> format_unquoted(Query, Params).
 %% @end
 %%------------------------------------------------------------------------------
 -spec format_column_value(
-    Column :: atom(), Separator :: string(), Value :: any()
+    Column :: column(), Separator :: string(), Value :: value()
 ) -> string().
 
 format_column_value(Column, Separator, Value) ->
@@ -256,7 +217,7 @@ format_column_value(Column, Separator, Value) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec format_column_value_with_equal_separator(
-    Column :: atom(), Value :: any()
+    Column :: column(), Value :: value()
 ) -> string().
 
 format_column_value_with_equal_separator(Column, Value) ->
@@ -354,11 +315,11 @@ columns_and_values_to_string_from_payload(Payload) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec insert_query(
-    Schema :: atom(),
-    Table :: atom(),
+    Schema :: schema(),
+    Table :: table(),
     Payload :: payload(),
     Returning :: column()
-) -> string().
+) -> query().
 
 insert_query(Schema, Table, Payload, Returning) ->
     {Columns, Values} = columns_and_values_to_string_from_payload(Payload),
@@ -371,13 +332,13 @@ insert_query(Schema, Table, Payload, Returning) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_query(
-    Schema :: atom(),
-    Table :: atom(),
+    Schema :: schema(),
+    Table :: table(),
     Payload :: payload(),
-    ClauseQuery :: string(),
-    ClauseParams :: params(),
+    ClauseQuery :: query(),
+    ClauseParams :: query_params(),
     Returning :: column()
-) -> string().
+) -> query().
 
 update_query(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning) ->
     Set = format_set(Payload),
@@ -395,7 +356,7 @@ update_query(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning) ->
 %% @doc Reformats the query.
 %% @end
 %%------------------------------------------------------------------------------
--spec do_reformat_query(Queries :: list(string()), Acc :: string()) -> string().
+-spec do_reformat_query(Queries :: list(query()), Acc :: query()) -> query().
 
 do_reformat_query([], Acc) ->
     Acc;

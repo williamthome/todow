@@ -53,11 +53,13 @@ test_update(Options) ->
   Result = todow_db:update_by_id(todos, Id, {[title], ["bar"]}, Options),
   {"Ensure update todo", ?_assertEqual(Expected, Result)}.
 
-% BUG: todow_db hangs calling itself causing a deadlock
 test_transaction(Options) ->
   Expected = {ok, 1},
   Result = todow_db:transaction(
-    fun(_Conn) -> todow_db:insert(todos, {[title], ["foo"]}, Options) end
+    fun(_Conn) ->
+      {ok, Id} = todow_db:insert(todos, {[title], ["foo"]}, Options),
+      todow_db:update_by_id(todos, Id, {[title], ["bar"]}, Options)
+    end
   ),
   {"Ensure execute transaction", ?_assertEqual(Expected, Result)}.
 

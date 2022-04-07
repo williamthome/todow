@@ -2,47 +2,17 @@
 -behaviour(gen_server).
 
 -include("./include/todow.hrl").
+-include("./include/todow_db.hrl").
 
 -define(SERVER, ?MODULE).
-
--define(DEFAULT_SCHEMA, public).
--define(DEFAULT_COLUMN, id).
--define(DEFAULT_TRANSFORM, fun todow_convert_utils:maybe_to_integer/1).
 -define(DEFAULT_ARGS, #{
     default_schema => ?DEFAULT_SCHEMA
 }).
--define(DEFAULT_OPTIONS, #{
-    schema => ?DEFAULT_SCHEMA,
-    returning => #{
-        column => ?DEFAULT_COLUMN,
-        transform => ?DEFAULT_TRANSFORM
-    }
-}).
 
--define(should_quote(Value), is_list(Value) orelse is_binary(Value)).
-
--type schema() :: atom().
--type adapter() :: atom().
 -type init_args() :: #{
     default_schema => schema(),
     adapter => adapter()
 }.
--type id() :: pos_integer().
--type column() :: todow_db_query:column().
--type transform() :: fun((1) -> any()).
--type returning() ::
-    column()
-    | #{column => column(), transform => transform()}.
--type options() :: #{
-    schema => schema(),
-    returning => returning()
-}.
--type result(Type) :: {ok, Type} | {error, any()}.
--type result() :: result(any()).
--type query_params() :: todow_db_query:params().
--type payload() :: todow_db_query:payload().
--type connection() :: any().
--type transaction_fun() :: fun((connection()) -> result()).
 
 -record(state, {
     default_schema :: schema(),
@@ -50,24 +20,15 @@
     adapter :: adapter()
 }).
 
--export_type([
-    id/0,
-    options/0,
-    result/0,
-    connection/0,
-    transaction_fun/0
-]).
-
 %% API functions
+% TODO: Rename equery to execute
 -export([
     start_link/1,
-    get_default_schema/0,
-    fquery/2,
-    equery/1, equery/2,
-    fequery/2, fequery/3,
-    insert/2, insert/3,
-    update/4, update/5,
-    update_by_id/3, update_by_id/4,
+    equery/1, equery/2, equery/3,
+    fequery/2, fequery/3, fequery/4,
+    insert/2, insert/3, insert/4,
+    update/4, update/5, update/6,
+    update_by_id/3, update_by_id/4, update_by_id/5,
     transaction/1, transaction/2
 ]).
 
@@ -96,26 +57,10 @@ start_link(Args) ->
     start_link(maps:merge(?DEFAULT_ARGS, Args)).
 
 %%------------------------------------------------------------------------------
-%% @doc Returns the default schema.
-%% @end
-%%------------------------------------------------------------------------------
--spec get_default_schema() -> schema().
-
-get_default_schema() -> gen_server:call(?SERVER, schema).
-
-%%------------------------------------------------------------------------------
-%% @doc Formats a query.
-%% @end
-%%------------------------------------------------------------------------------
--spec fquery(Query :: string(), Params :: query_params()) -> string().
-
-fquery(Query, Params) -> gen_server:call(?SERVER, {fquery, Query, Params}).
-
-%%------------------------------------------------------------------------------
 %% @doc Executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec equery(Query :: string()) -> any().
+-spec equery(Query :: query()) -> result().
 
 equery(Query) -> equery(Query, maps:new()).
 
@@ -123,15 +68,28 @@ equery(Query) -> equery(Query, maps:new()).
 %% @doc Executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec equery(Query :: string(), Options :: options()) -> any().
+-spec equery(Query :: query(), Options :: options()) -> result().
 
-equery(Query, Options) -> gen_server:call(?SERVER, {equery, Query, Options}).
+equery(Query, Options) -> equery(undefined, Query, Options).
+
+%%------------------------------------------------------------------------------
+%% @doc Executes a query.
+%% @end
+%%------------------------------------------------------------------------------
+-spec equery(
+    Connection :: connection(),
+    Query :: query(),
+    Options :: options()
+) -> result().
+
+equery(Connection, Query, Options) ->
+    gen_server:call(?SERVER, {equery, Connection, Query, Options}).
 
 %%------------------------------------------------------------------------------
 %% @doc Formats and executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec fequery(Query :: string(), Params :: query_params()) -> any().
+-spec fequery(Query :: query(), Params :: query_params()) -> result().
 
 fequery(Query, Params) -> fequery(Query, Params, maps:new()).
 
@@ -140,19 +98,32 @@ fequery(Query, Params) -> fequery(Query, Params, maps:new()).
 %% @end
 %%------------------------------------------------------------------------------
 -spec fequery(
-    Query :: string(),
+    Query :: query(),
     Params :: query_params(),
     Options :: options()
-) -> any().
+) -> result().
 
-fequery(Query, Params, Options) ->
-    gen_server:call(?SERVER, {fequery, Query, Params, Options}).
+fequery(Query, Params, Options) -> fequery(undefined, Query, Params, Options).
+
+%%------------------------------------------------------------------------------
+%% @doc Formats and executes a query.
+%% @end
+%%------------------------------------------------------------------------------
+-spec fequery(
+    Connection :: connection(),
+    Query :: query(),
+    Params :: query_params(),
+    Options :: options()
+) -> result().
+
+fequery(Connection, Query, Params, Options) ->
+    gen_server:call(?SERVER, {fequery, Connection, Query, Params, Options}).
 
 %%------------------------------------------------------------------------------
 %% @doc Inserts data into db.
 %% @end
 %%------------------------------------------------------------------------------
--spec insert(Table :: atom(), Payload :: payload()) -> result().
+-spec insert(Table :: table(), Payload :: payload()) -> result().
 
 insert(Table, Payload) -> insert(Table, Payload, ?DEFAULT_OPTIONS).
 
@@ -161,22 +132,35 @@ insert(Table, Payload) -> insert(Table, Payload, ?DEFAULT_OPTIONS).
 %% @end
 %%------------------------------------------------------------------------------
 -spec insert(
-    Table :: atom(),
+    Table :: table(),
     Payload :: payload(),
     Options :: options()
 ) -> result().
 
-insert(Table, Payload, Options) ->
-    gen_server:call(?SERVER, {insert, Table, Payload, Options}).
+insert(Table, Payload, Options) -> insert(undefined, Table, Payload, Options).
+
+%%------------------------------------------------------------------------------
+%% @doc Inserts data into db.
+%% @end
+%%------------------------------------------------------------------------------
+-spec insert(
+    Connection :: connection(),
+    Table :: table(),
+    Payload :: payload(),
+    Options :: options()
+) -> result().
+
+insert(Connection, Table, Payload, Options) ->
+    gen_server:call(?SERVER, {insert, Connection, Table, Payload, Options}).
 
 %%------------------------------------------------------------------------------
 %% @doc Updates db data.
 %% @end
 %%------------------------------------------------------------------------------
 -spec update(
-    Table :: atom(),
+    Table :: table(),
     Payload :: payload(),
-    ClauseQuery :: string(),
+    ClauseQuery :: query(),
     ClauseParams :: query_params()
 ) -> result().
 
@@ -188,17 +172,33 @@ update(Table, Payload, ClauseQuery, ClauseParams) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update(
-    Table :: atom(),
+    Table :: table(),
     Payload :: payload(),
-    ClauseQuery :: string(),
+    ClauseQuery :: query(),
     ClauseParams :: query_params(),
     Options :: options()
 ) -> result().
 
 update(Table, Payload, ClauseQuery, ClauseParams, Options) ->
+    update(undefined, Table, Payload, ClauseQuery, ClauseParams, Options).
+
+%%------------------------------------------------------------------------------
+%% @doc Updates db data.
+%% @end
+%%------------------------------------------------------------------------------
+-spec update(
+    Connection :: connection(),
+    Table :: table(),
+    Payload :: payload(),
+    ClauseQuery :: query(),
+    ClauseParams :: query_params(),
+    Options :: options()
+) -> result().
+
+update(Connection, Table, Payload, ClauseQuery, ClauseParams, Options) ->
     gen_server:call(
         ?SERVER,
-        {update, Table, Payload, ClauseQuery, ClauseParams, Options}
+        {update, Connection, Table, Payload, ClauseQuery, ClauseParams, Options}
     ).
 
 %%------------------------------------------------------------------------------
@@ -206,7 +206,7 @@ update(Table, Payload, ClauseQuery, ClauseParams, Options) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_by_id(
-    Table :: atom(),
+    Table :: table(),
     Id :: id(),
     Payload :: payload()
 ) -> result().
@@ -219,16 +219,32 @@ update_by_id(Table, Id, Payload) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_by_id(
-    Table :: atom(),
+    Table :: table(),
     Id :: id(),
     Payload :: payload(),
     Options :: options()
 ) -> result().
 
 update_by_id(Table, Id, Payload, Options) ->
-    ClauseQuery = "WHERE id = $1",
-    ClauseParams = [Id],
-    update(Table, Payload, ClauseQuery, ClauseParams, Options).
+    update_by_id(undefined, Table, Id, Payload, Options).
+
+%%------------------------------------------------------------------------------
+%% @doc Updates db data by id.
+%% @end
+%%------------------------------------------------------------------------------
+-spec update_by_id(
+    Connection :: connection(),
+    Table :: table(),
+    Id :: id(),
+    Payload :: payload(),
+    Options :: options()
+) -> result().
+
+update_by_id(Connection, Table, Id, Payload, Options) ->
+    gen_server:call(
+        ?SERVER,
+        {update_by_id, Connection, Table, Id, Payload, Options}
+    ).
 
 %%------------------------------------------------------------------------------
 %% @doc Executes a function in a transaction.
@@ -236,8 +252,7 @@ update_by_id(Table, Id, Payload, Options) ->
 %%------------------------------------------------------------------------------
 -spec transaction(Fun :: transaction_fun()) -> result().
 
-transaction(Fun) ->
-    transaction(undefined, Fun).
+transaction(Fun) -> transaction(undefined, Fun).
 
 %%------------------------------------------------------------------------------
 %% @doc Executes a function in a transaction.
@@ -248,10 +263,7 @@ transaction(Fun) ->
 ) -> result().
 
 transaction(Connection, Fun) ->
-    gen_server:call(
-        ?SERVER,
-        {transaction, Connection, Fun}
-    ).
+    gen_server:call(?SERVER, {transaction, Connection, Fun}).
 
 %%%=============================================================================
 %%% GenServer callbacks
@@ -260,40 +272,59 @@ transaction(Connection, Fun) ->
 
 init(#state{} = State) -> {ok, State}.
 
-handle_call(schema, _From, #state{default_schema = Schema} = State) ->
-    {reply, Schema, State};
-handle_call({fquery, Query, Params}, _From, State) ->
-    Reply = do_fquery(Query, Params),
-    {reply, Reply, State};
 handle_call(
-    {equery, Query, Options},
-    _From,
+    {Function = equery, Connection, Query, Options},
+    From,
     #state{adapter = Adapter} = State
 ) ->
-    Reply = do_equery(Adapter, Query, Options),
-    {reply, Reply, State};
-handle_call({fequery, Query, Params, Options}, _From, #state{adapter = Adapter} = State) ->
-    Reply = do_fequery(Adapter, Query, Params, Options),
-    {reply, Reply, State};
-handle_call({insert, Table, Payload, Options}, _From, #state{adapter = Adapter} = State) ->
+    Args = [Connection, Adapter, Query, Options],
+    spawn_reply(From, Function, Args),
+    {noreply, State};
+handle_call(
+    {fequery, Connection, Query, Params, Options},
+    From,
+    #state{adapter = Adapter} = State
+) ->
+    Function = equery,
+    QueryToExecute = todow_db_query:format(Query, Params),
+    Args = [Connection, Adapter, QueryToExecute, Options],
+    spawn_reply(From, Function, Args),
+    {noreply, State};
+handle_call(
+    {Function = insert, Connection, Table, Payload, Options},
+    From,
+    #state{adapter = Adapter} = State
+) ->
     Schema = fetch_schema(Options, State),
-    Reply = do_insert(Adapter, Schema, Table, Payload, Options),
-    {reply, Reply, State};
+    Args = [Connection, Adapter, Schema, Table, Payload, Options],
+    spawn_reply(From, Function, Args),
+    {noreply, State};
 handle_call(
-    {update, Table, Payload, ClauseQuery, ClauseParams, Options},
-    _From,
+    {Function = update, Connection, Table, Payload, ClauseQuery, ClauseParams, Options},
+    From,
     #state{adapter = Adapter} = State
 ) ->
     Schema = fetch_schema(Options, State),
-    Reply = do_update(Adapter, Schema, Table, Payload, ClauseQuery, ClauseParams, Options),
-    {reply, Reply, State};
+    Args = [Connection, Adapter, Schema, Table, Payload, ClauseQuery, ClauseParams, Options],
+    spawn_reply(From, Function, Args),
+    {noreply, State};
 handle_call(
-    {transaction, Connection, Fun},
-    _From,
+    {Function = update_by_id, Connection, Table, Id, Payload, Options},
+    From,
     #state{adapter = Adapter} = State
 ) ->
-    Reply = do_transaction(Connection, Adapter, Fun),
-    {reply, Reply, State}.
+    Schema = fetch_schema(Options, State),
+    Args = [Connection, Adapter, Schema, Table, Id, Payload, Options],
+    spawn_reply(From, Function, Args),
+    {noreply, State};
+handle_call(
+    {Function = transaction, Connection, Fun},
+    From,
+    #state{adapter = Adapter} = State
+) ->
+    Args = [Connection, Adapter, Fun],
+    spawn_reply(From, Function, Args),
+    {noreply, State}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -311,35 +342,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%=============================================================================
 
-do_fquery(Query, Params) ->
-    todow_db_query:format_query(Query, Params).
-
-do_equery(Adapter, Query, Options) ->
-    Result = Adapter:equery(Query),
-    maybe_transform(Result, Options).
-
-do_fequery(Adapter, Query, Params, Options) ->
-    QueryToExecute = do_fquery(Query, Params),
-    do_equery(Adapter, QueryToExecute, Options).
-
-do_insert(Adapter, Schema, Table, Payload, Options) ->
-    Returning = fetch_column(Options),
-    Query = todow_db_query:insert_query(Schema, Table, Payload, Returning),
-    do_equery(Adapter, Query, Options).
-
-do_update(Adapter, Schema, Table, Payload, ClauseQuery, ClauseParams, Options) ->
-    Returning = fetch_column(Options),
-    Query = todow_db_query:update_query(
-        Schema, Table, Payload, ClauseQuery, ClauseParams, Returning
-    ),
-    do_equery(Adapter, Query, Options).
-
-do_transaction(undefined, Adapter, Fun) ->
-    Connection = Adapter:get_connection(),
-    do_transaction(Connection, Adapter, Fun);
-do_transaction(Connection, Adapter, Fun) ->
-    Adapter:transaction(Connection, Fun).
-
 -spec fetch_schema(Options :: options(), #state{}) -> schema().
 
 fetch_schema(#{schema := undefined}, #state{default_schema = Schema}) ->
@@ -347,33 +349,15 @@ fetch_schema(#{schema := undefined}, #state{default_schema = Schema}) ->
 fetch_schema(#{schema := Schema}, #state{}) ->
     Schema.
 
--spec fetch_column(Options :: options()) -> column().
+-spec spawn_reply(From :: pid(), MFA :: mfa()) -> result().
 
-fetch_column(#{returning := #{column := Column}}) -> Column;
-fetch_column(#{returning := Column}) -> Column;
-fetch_column(_Options) -> ?DEFAULT_COLUMN.
+spawn_reply(From, {Module, Fun, Args}) ->
+    spawn(fun() ->
+        Reply = apply(Module, Fun, Args),
+        gen_server:reply(From, Reply)
+    end).
 
--spec fetch_transform(
-    Options :: options()
-) -> transform() | undefined.
+-spec spawn_reply(From :: pid(), Fun :: atom(), Args :: list()) -> result().
 
-fetch_transform(#{returning := #{transform := Transform}}) ->
-    Transform;
-fetch_transform(Options) ->
-    case fetch_column(Options) =:= ?DEFAULT_COLUMN of
-        true -> ?DEFAULT_TRANSFORM;
-        false -> undefined
-    end.
-
--spec maybe_transform(Result :: any(), Options :: options()) -> any().
-
-maybe_transform(Result, Options) ->
-    case fetch_transform(Options) of
-        undefined -> Result;
-        Transform -> do_transform(Transform, Result)
-    end.
-
-do_transform(_Transform, {error, _Reason} = Error) ->
-    Error;
-do_transform(Transform, {ok, Result}) ->
-    {ok, Transform(Result)}.
+spawn_reply(From, Fun, Args) ->
+    spawn_reply(From, {todow_db_repo, Fun, Args}).

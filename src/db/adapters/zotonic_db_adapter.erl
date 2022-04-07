@@ -1,13 +1,13 @@
 -module(zotonic_db_adapter).
 -behaviour(todow_db_adapter).
 
--define(CONTEXT, todow:context()).
+-include("../../include/todow_db.hrl").
 
--type connection() :: z:context().
+-define(CONTEXT, todow:context()).
 
 -export([
     get_connection/0,
-    equery/1,
+    equery/2,
     transaction/2
 ]).
 
@@ -23,10 +23,13 @@ get_connection() -> ?CONTEXT.
 %% @doc Executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec equery(Query :: string()) -> todow_db:result().
+-spec equery(
+    Connection :: connection(),
+    Query :: string()
+) -> result().
 
-equery(Query) ->
-    Result = z_db:squery(Query, ?CONTEXT),
+equery(Connection, Query) ->
+    Result = z_db:squery(Query, Connection),
     to_db_result(Result).
 
 %%------------------------------------------------------------------------------
@@ -34,10 +37,13 @@ equery(Query) ->
 %% @end
 %%------------------------------------------------------------------------------
 
--spec transaction(z:context(), todow_db:transaction_fun()) -> todow_db:result().
+-spec transaction(
+    Connection :: connection(),
+    Fun :: transaction_fun()
+) -> result().
 
-transaction(Context, Fun) ->
-    Result = z_db:transaction(Fun, Context),
+transaction(Connection, Fun) ->
+    Result = z_db:transaction(Fun, Connection),
     to_db_result(Result).
 
 %%%=============================================================================
@@ -48,7 +54,7 @@ transaction(Context, Fun) ->
 %% @doc Transforms to expected db result.
 %% @end
 %%------------------------------------------------------------------------------
--spec to_db_result(Result :: any()) -> todow_db:result().
+-spec to_db_result(Result :: any()) -> result().
 
 to_db_result({ok, _, _Column, [{Value}]}) ->
     {ok, Value};
@@ -62,5 +68,7 @@ to_db_result({error, {error, error, _Code, Reason, Msg, _Debug}}) ->
     {error, {Reason, Msg}};
 to_db_result({error, _} = Error) ->
     Error;
+to_db_result({ok, _} = Result) ->
+    Result;
 to_db_result(Result) ->
     {ok, Result}.
