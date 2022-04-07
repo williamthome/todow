@@ -6,16 +6,16 @@
 -define(SERVER, ?MODULE).
 
 -define(DEFAULT_SCHEMA, public).
--define(DEFAULT_RETURNING_COLUMN, id).
--define(DEFAULT_RETURNING_COLUMN_TRANSFORM, fun todow_convert_utils:maybe_to_integer/1).
+-define(DEFAULT_COLUMN, id).
+-define(DEFAULT_TRANSFORM, fun todow_convert_utils:maybe_to_integer/1).
 -define(DEFAULT_ARGS, #{
     default_schema => ?DEFAULT_SCHEMA
 }).
 -define(DEFAULT_OPTIONS, #{
     schema => ?DEFAULT_SCHEMA,
     returning => #{
-        column => ?DEFAULT_RETURNING_COLUMN,
-        transform => ?DEFAULT_RETURNING_COLUMN_TRANSFORM
+        column => ?DEFAULT_COLUMN,
+        transform => ?DEFAULT_TRANSFORM
     }
 }).
 
@@ -262,44 +262,43 @@ init(#state{} = State) -> {ok, State}.
 
 handle_call(schema, _From, #state{default_schema = Schema} = State) ->
     {reply, Schema, State};
+
 handle_call({fquery, Query, Params}, _From, State) ->
-    Reply = todow_db_query:format_query(Query, Params),
+    Reply = do_fquery(Query, Params),
     {reply, Reply, State};
+
 handle_call(
     {equery, Query, Options},
     _From,
-    #state{} = State
+    #state{adapter = Adapter} = State
 ) ->
-    Reply = adapter_equery(State, Query, Options),
+    Reply = do_equery(Adapter, Query, Options),
     {reply, Reply, State};
-handle_call({fequery, Query, Params, Options}, _From, #state{} = State) ->
-    QueryToExecute = todow_db_query:format_query(Query, Params),
-    Reply = adapter_equery(State, QueryToExecute, Options),
+
+handle_call({fequery, Query, Params, Options}, _From, #state{adapter = Adapter} = State) ->
+    Reply = do_fequery(Adapter, Query, Params, Options),
     {reply, Reply, State};
-handle_call({insert, Table, Payload, Options}, _From, #state{} = State) ->
-    Schema = extract_schema(Options, State),
-    Returning = extract_returning_column(Options),
-    Query = todow_db_query:insert_query(Schema, Table, Payload, Returning),
-    Reply = adapter_equery(State, Query, Options),
+
+handle_call({insert, Table, Payload, Options}, _From, #state{adapter = Adapter} = State) ->
+    Schema = fetch_schema(Options, State),
+    Reply = do_insert(Adapter, Schema, Table, Payload, Options),
     {reply, Reply, State};
+
 handle_call(
     {update, Table, Payload, ClauseQuery, ClauseParams, Options},
     _From,
-    #state{} = State
+    #state{adapter = Adapter} = State
 ) ->
-    Schema = extract_schema(Options, State),
-    Returning = extract_returning_column(Options),
-    Query = todow_db_query:update_query(
-        Schema, Table, Payload, ClauseQuery, ClauseParams, Returning
-    ),
-    Reply = adapter_equery(State, Query, Options),
+    Schema = fetch_schema(Options, State),
+    Reply = do_update(Adapter, Schema, Table, Payload, ClauseQuery, ClauseParams, Options),
     {reply, Reply, State};
+
 handle_call(
-    {transaction, MaybeConnection, Fun},
+    {transaction, ConnectionOrUndefined, Fun},
     _From,
     #state{adapter = Adapter} = State
 ) ->
-    Connection = maybe_get_adapter_connection(MaybeConnection, State),
+    Connection = fetch_connection(ConnectionOrUndefined, Adapter),
     Reply = Adapter:transaction(Connection, Fun),
     {reply, Reply, State}.
 
@@ -319,35 +318,58 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%=============================================================================
 
--spec extract_schema(Options :: options(), #state{}) -> schema().
+do_fquery(Query, Params) ->
+    todow_db_query:format_query(Query, Params).
 
-extract_schema(#{schema := undefined}, #state{default_schema = Schema}) ->
+do_equery(Adapter, Query, Options) ->
+    Result = Adapter:equery(Query),
+    maybe_transform(Result, Options).
+
+do_fequery(Adapter, Query, Params, Options) ->
+    QueryToExecute = do_fquery(Query, Params),
+    do_equery(Adapter, QueryToExecute, Options).
+
+do_insert(Adapter, Schema, Table, Payload, Options) ->
+    Returning = fetch_column(Options),
+    Query = todow_db_query:insert_query(Schema, Table, Payload, Returning),
+    do_equery(Adapter, Query, Options).
+
+do_update(Adapter, Schema, Table, Payload, ClauseQuery, ClauseParams, Options) ->
+    Returning = fetch_column(Options),
+    Query = todow_db_query:update_query(
+        Schema, Table, Payload, ClauseQuery, ClauseParams, Returning
+    ),
+    do_equery(Adapter, Query, Options).
+
+-spec fetch_schema(Options :: options(), #state{}) -> schema().
+
+fetch_schema(#{schema := undefined}, #state{default_schema = Schema}) ->
     Schema;
-extract_schema(#{schema := Schema}, #state{}) ->
+fetch_schema(#{schema := Schema}, #state{}) ->
     Schema.
 
--spec extract_returning_column(Options :: options()) -> column().
+-spec fetch_column(Options :: options()) -> column().
 
-extract_returning_column(#{returning := #{column := Column}}) -> Column;
-extract_returning_column(#{returning := Column}) -> Column;
-extract_returning_column(_Options) -> ?DEFAULT_RETURNING_COLUMN.
+fetch_column(#{returning := #{column := Column}}) -> Column;
+fetch_column(#{returning := Column}) -> Column;
+fetch_column(_Options) -> ?DEFAULT_COLUMN.
 
--spec extract_returning_transform(
+-spec fetch_transform(
     Options :: options()
 ) -> transform() | undefined.
 
-extract_returning_transform(#{returning := #{transform := Transform}}) ->
+fetch_transform(#{returning := #{transform := Transform}}) ->
     Transform;
-extract_returning_transform(Options) ->
-    case extract_returning_column(Options) =:= ?DEFAULT_RETURNING_COLUMN of
-        true -> ?DEFAULT_RETURNING_COLUMN_TRANSFORM;
+fetch_transform(Options) ->
+    case fetch_column(Options) =:= ?DEFAULT_COLUMN of
+        true -> ?DEFAULT_TRANSFORM;
         false -> undefined
     end.
 
 -spec maybe_transform(Result :: any(), Options :: options()) -> any().
 
 maybe_transform(Result, Options) ->
-    case extract_returning_transform(Options) of
+    case fetch_transform(Options) of
         undefined -> Result;
         Transform -> do_transform(Transform, Result)
     end.
@@ -357,14 +379,7 @@ do_transform(_Transform, {error, _Reason} = Error) ->
 do_transform(Transform, {ok, Result}) ->
     {ok, Transform(Result)}.
 
-adapter_equery(#state{adapter = Adapter}, Query, Options) ->
-    Result = Adapter:equery(Query),
-    maybe_transform(Result, Options).
-
-get_adapter_connection(#state{adapter = Adapter}) ->
-    Adapter:get_connection().
-
-maybe_get_adapter_connection(undefined, State) ->
-    get_adapter_connection(State);
-maybe_get_adapter_connection(Connection, _State) ->
+fetch_connection(undefined, Adapter) ->
+    Adapter:get_connection();
+fetch_connection(Connection, _Adapter) ->
     Connection.
