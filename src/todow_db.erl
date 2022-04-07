@@ -21,7 +21,6 @@
 }).
 
 %% API functions
-% TODO: Rename equery to execute
 -export([
     start_link/1,
     equery/1, equery/2, equery/3,

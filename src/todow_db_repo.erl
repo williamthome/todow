@@ -3,7 +3,6 @@
 -include("./include/todow.hrl").
 -include("./include/todow_db.hrl").
 
-% TODO: Rename equery to execute
 -export([
     equery/4,
     insert/6,
