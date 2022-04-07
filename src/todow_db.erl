@@ -288,12 +288,11 @@ handle_call(
     Reply = do_update(Adapter, Schema, Table, Payload, ClauseQuery, ClauseParams, Options),
     {reply, Reply, State};
 handle_call(
-    {transaction, ConnectionOrUndefined, Fun},
+    {transaction, Connection, Fun},
     _From,
     #state{adapter = Adapter} = State
 ) ->
-    Connection = fetch_connection(ConnectionOrUndefined, Adapter),
-    Reply = Adapter:transaction(Connection, Fun),
+    Reply = do_transaction(Connection, Adapter, Fun),
     {reply, Reply, State}.
 
 handle_cast(_Msg, State) ->
@@ -335,6 +334,12 @@ do_update(Adapter, Schema, Table, Payload, ClauseQuery, ClauseParams, Options) -
     ),
     do_equery(Adapter, Query, Options).
 
+do_transaction(undefined, Adapter, Fun) ->
+    Connection = Adapter:get_connection(),
+    do_transaction(Connection, Adapter, Fun);
+do_transaction(Connection, Adapter, Fun) ->
+    Adapter:transaction(Connection, Fun).
+
 -spec fetch_schema(Options :: options(), #state{}) -> schema().
 
 fetch_schema(#{schema := undefined}, #state{default_schema = Schema}) ->
@@ -372,8 +377,3 @@ do_transform(_Transform, {error, _Reason} = Error) ->
     Error;
 do_transform(Transform, {ok, Result}) ->
     {ok, Transform(Result)}.
-
-fetch_connection(undefined, Adapter) ->
-    Adapter:get_connection();
-fetch_connection(Connection, _Adapter) ->
-    Connection.
