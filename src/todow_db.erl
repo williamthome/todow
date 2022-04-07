@@ -348,7 +348,7 @@ fetch_schema(#{schema := undefined}, #state{default_schema = Schema}) ->
 fetch_schema(#{schema := Schema}, #state{}) ->
     Schema.
 
--spec spawn_reply(From :: pid(), MFA :: mfa()) -> result().
+-spec spawn_reply(From :: any(), MFA :: {module(), atom(), list()}) -> pid().
 
 spawn_reply(From, {Module, Fun, Args}) ->
     spawn(fun() ->
@@ -356,7 +356,7 @@ spawn_reply(From, {Module, Fun, Args}) ->
         gen_server:reply(From, Reply)
     end).
 
--spec spawn_reply(From :: pid(), Fun :: atom(), Args :: list()) -> result().
+-spec spawn_reply(From :: any(), Fun :: atom(), Args :: list()) -> pid().
 
 spawn_reply(From, Fun, Args) ->
     spawn_reply(From, {todow_db_repo, Fun, Args}).

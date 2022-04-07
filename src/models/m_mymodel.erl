@@ -1,5 +1,10 @@
 -module(m_mymodel).
+
+-include_lib("zotonic_core/include/zotonic.hrl").
+
+-ifdef(ZOTONIC_VERSION).
 -behaviour(zotonic_model).
+-endif.
 
 -include("../include/todow_http.hrl").
 
