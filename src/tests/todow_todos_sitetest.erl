@@ -34,7 +34,8 @@ cleanup(#{schema := Schema}) ->
 success() ->
   [
     fun test_insert/1,
-    fun test_update/1
+    fun test_update/1,
+    fun test_transaction/1
   ].
 
 %%%=============================================================================
@@ -51,6 +52,13 @@ test_update(Options) ->
   Expected = {ok, Id},
   Result = todow_db:update_by_id(todos, Id, {[title], ["bar"]}, Options),
   {"Ensure update todo", ?_assertEqual(Expected, Result)}.
+
+test_transaction(_Options) ->
+  Expected = {ok, 1},
+  Result = todow_db:transaction(
+    fun(_Conn) -> 1 end
+  ),
+  {"Ensure execute transaction", ?_assertEqual(Expected, Result)}.
 
 %%%=============================================================================
 %%% Helpers

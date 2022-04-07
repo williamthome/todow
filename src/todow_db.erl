@@ -41,6 +41,8 @@
 -type result() :: result(any()).
 -type query_params() :: todow_db_query:params().
 -type payload() :: todow_db_query:payload().
+-type connection() :: any().
+-type transaction_fun() :: fun((connection()) -> result()).
 
 -record(state, {
     default_schema :: schema(),
@@ -51,7 +53,9 @@
 -export_type([
     id/0,
     options/0,
-    result/0
+    result/0,
+    connection/0,
+    transaction_fun/0
 ]).
 
 %% API functions
@@ -63,7 +67,8 @@
     fequery/2, fequery/3,
     insert/2, insert/3,
     update/4, update/5,
-    update_by_id/3, update_by_id/4
+    update_by_id/3, update_by_id/4,
+    transaction/1, transaction/2
 ]).
 
 %% GenServer callbacks
@@ -225,6 +230,29 @@ update_by_id(Table, Id, Payload, Options) ->
     ClauseParams = [Id],
     update(Table, Payload, ClauseQuery, ClauseParams, Options).
 
+%%------------------------------------------------------------------------------
+%% @doc Executes a function in a transaction.
+%% @end
+%%------------------------------------------------------------------------------
+-spec transaction(Fun :: transaction_fun()) -> result().
+
+transaction(Fun) ->
+    transaction(undefined, Fun).
+
+%%------------------------------------------------------------------------------
+%% @doc Executes a function in a transaction.
+%% @end
+%%------------------------------------------------------------------------------
+-spec transaction(
+    Connection :: connection(), Fun :: transaction_fun()
+) -> result().
+
+transaction(Connection, Fun) ->
+    gen_server:call(
+        ?SERVER,
+        {transaction, Connection, Fun}
+    ).
+
 %%%=============================================================================
 %%% GenServer callbacks
 %%%=============================================================================
@@ -265,6 +293,14 @@ handle_call(
         Schema, Table, Payload, ClauseQuery, ClauseParams, Returning
     ),
     Reply = adapter_equery(State, Query, Options),
+    {reply, Reply, State};
+handle_call(
+    {transaction, MaybeConnection, Fun},
+    _From,
+    #state{adapter = Adapter} = State
+) ->
+    Connection = maybe_get_adapter_connection(MaybeConnection, State),
+    Reply = Adapter:transaction(Connection, Fun),
     {reply, Reply, State}.
 
 handle_cast(_Msg, State) ->
@@ -319,10 +355,16 @@ maybe_transform(Result, Options) ->
 do_transform(_Transform, {error, _Reason} = Error) ->
     Error;
 do_transform(Transform, {ok, Result}) ->
-    {ok, do_transform(Transform, Result)};
-do_transform(Transform, Result) ->
-    Transform(Result).
+    {ok, Transform(Result)}.
 
 adapter_equery(#state{adapter = Adapter}, Query, Options) ->
     Result = Adapter:equery(Query),
     maybe_transform(Result, Options).
+
+get_adapter_connection(#state{adapter = Adapter}) ->
+    Adapter:get_connection().
+
+maybe_get_adapter_connection(undefined, State) ->
+    get_adapter_connection(State);
+maybe_get_adapter_connection(Connection, _State) ->
+    Connection.
