@@ -1,7 +1,6 @@
 -define(DEFAULT_SCHEMA, public).
 -define(DEFAULT_COLUMN, id).
-% TODO: id transform function
--define(DEFAULT_TRANSFORM,
+-define(ID_TRANSFORM,
     fun
         (Value) when is_integer(Value) -> Value;
         (undefined) -> undefined;
@@ -10,6 +9,7 @@
             todow_convert_utils:must_to_integer(Value)
     end
 ).
+-define(DEFAULT_TRANSFORM, ?ID_TRANSFORM).
 -define(DEFAULT_OPTIONS, #{
     schema => ?DEFAULT_SCHEMA,
     returning => #{
