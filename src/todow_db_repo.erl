@@ -90,7 +90,7 @@ update_by_id(Connection, Adapter, Schema, Table, Id, Payload, Options) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec transaction(
-    Connection :: connection(), Adapter :: adapter(),Fun :: transaction_fun()
+    Connection :: connection(), Adapter :: adapter(), Fun :: transaction_fun()
 ) -> result().
 
 transaction(undefined, Adapter, Fun) ->
