@@ -1,8 +1,8 @@
 {application, todow, [
-    {description, "Default Zotonic empty site"},
+    {description, "A todo app in erlang"},
     {vsn, "git"},
     {registered, []},
-    {applications, [kernel, stdlib, zotonic_core]},
+    {applications, [kernel, stdlib]},
     {env, []},
     {modules, []},
     {mod, {todow_app, []}},
