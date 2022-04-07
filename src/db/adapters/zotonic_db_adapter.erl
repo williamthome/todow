@@ -1,5 +1,5 @@
 -module(zotonic_db_adapter).
--behaviour(todow_db_adapter).
+-behavior(todow_db_adapter).
 
 -include("../../include/todow_db.hrl").
 

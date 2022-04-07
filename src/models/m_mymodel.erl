@@ -1,11 +1,9 @@
 -module(m_mymodel).
-
--include_lib("zotonic_core/include/zotonic.hrl").
-
 -ifdef(ZOTONIC_VERSION).
--behaviour(zotonic_model).
+-behavior(zotonic_model).
 -endif.
 
+-include_lib("zotonic_core/include/zotonic.hrl").
 -include("../include/todow_http.hrl").
 
 -export([

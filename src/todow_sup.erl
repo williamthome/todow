@@ -1,5 +1,5 @@
 -module(todow_sup).
--behaviour(supervisor).
+-behavior(supervisor).
 
 %% API functions
 -export([start_link/0]).

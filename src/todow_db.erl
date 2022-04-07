@@ -1,5 +1,5 @@
 -module(todow_db).
--behaviour(gen_server).
+-behavior(gen_server).
 
 -include("./include/todow.hrl").
 -include("./include/todow_db.hrl").
@@ -16,7 +16,7 @@
 
 -record(state, {
     default_schema :: schema(),
-    % -behaviour(todow_db_adapter).
+    % -behavior(todow_db_adapter).
     adapter :: adapter()
 }).
 
