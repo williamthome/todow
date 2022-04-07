@@ -262,11 +262,9 @@ init(#state{} = State) -> {ok, State}.
 
 handle_call(schema, _From, #state{default_schema = Schema} = State) ->
     {reply, Schema, State};
-
 handle_call({fquery, Query, Params}, _From, State) ->
     Reply = do_fquery(Query, Params),
     {reply, Reply, State};
-
 handle_call(
     {equery, Query, Options},
     _From,
@@ -274,16 +272,13 @@ handle_call(
 ) ->
     Reply = do_equery(Adapter, Query, Options),
     {reply, Reply, State};
-
 handle_call({fequery, Query, Params, Options}, _From, #state{adapter = Adapter} = State) ->
     Reply = do_fequery(Adapter, Query, Params, Options),
     {reply, Reply, State};
-
 handle_call({insert, Table, Payload, Options}, _From, #state{adapter = Adapter} = State) ->
     Schema = fetch_schema(Options, State),
     Reply = do_insert(Adapter, Schema, Table, Payload, Options),
     {reply, Reply, State};
-
 handle_call(
     {update, Table, Payload, ClauseQuery, ClauseParams, Options},
     _From,
@@ -292,7 +287,6 @@ handle_call(
     Schema = fetch_schema(Options, State),
     Reply = do_update(Adapter, Schema, Table, Payload, ClauseQuery, ClauseParams, Options),
     {reply, Reply, State};
-
 handle_call(
     {transaction, ConnectionOrUndefined, Fun},
     _From,

@@ -8,12 +8,10 @@
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
--define(DB_SPEC(Id, Args),
-  #{
-        id => Id,
-        start => {todow_db, start_link, [Args]}
-    }
-).
+-define(DB_SPEC(Id, Args), #{
+    id => Id,
+    start => {todow_db, start_link, [Args]}
+}).
 
 %%%=============================================================================
 %%% API functions
