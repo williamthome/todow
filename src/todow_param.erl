@@ -10,7 +10,7 @@
 -define(is_param(X), is_map(X)).
 
 -type name() :: atom().
-% TODO: More types
+% TODO: More types, e.g. string, param, topic, etc, according to app objects
 -type type() ::
     atom
     | integer
@@ -39,6 +39,7 @@
 -type default() :: fun(() -> any()) | any().
 
 % TODO: Cast?
+% TODO: Secret flag to hide value on validation_error
 -type t() :: #{
     name => name(),
     type => type(),
