@@ -7,7 +7,13 @@
     validators => []
 }).
 
--define(is_param(X), is_map(X)).
+-define(is_param(X),
+    is_map(X) andalso
+        is_map_key(name, X) andalso
+        is_map_key(type, X) andalso
+        is_map_key(default, X) andalso
+        is_map_key(validators, X)
+).
 
 -type name() :: atom().
 % TODO: More types, e.g. string, param, topic, etc, according to app objects
