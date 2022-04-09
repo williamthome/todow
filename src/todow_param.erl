@@ -78,7 +78,6 @@ merge(A = #{type := Type}, B = #{type := Type}) ->
 -spec unwrap_default(Def :: any()) -> any().
 
 unwrap_default(#{default := Def}) -> unwrap_default(Def);
-unwrap_default(#{}) -> undefined;
 unwrap_default(Def) when is_function(Def, 0) -> Def();
 unwrap_default(Def) -> Def.
 
