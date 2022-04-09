@@ -65,7 +65,7 @@
 -export([
     valid_changes/1,
     cast/3, cast/4,
-    validate/4,
+    validates/4,
     ignore_default/0
 ]).
 
@@ -300,16 +300,16 @@ cast(Data, Changes, ValidKeys, Options) when
 %% @doc Validates changeset.
 %% @end
 %%------------------------------------------------------------------------------
--spec validate(
+-spec validates(
     Changeset :: t(),
     Validators :: todow_validation:validators(),
     Key :: any(),
     Value :: any()
 ) -> t().
 
-validate(Changeset, Validators, Key, Value) ->
-    ValidateResult = todow_validation:validate(Validators, Value),
-    maybe_put_validate_error(ValidateResult, Changeset, Key).
+validates(Changeset, Validators, Key, Value) ->
+    ValidateResult = todow_validation:validates(Validators, Value),
+    maybe_put_validation_error(ValidateResult, Changeset, Key).
 
 %%------------------------------------------------------------------------------
 %% @doc Flag to not update using default value. Useful for function as default.
@@ -397,15 +397,15 @@ maybe_set_change(_Action, Changeset, Key, _OldValue, NewValue) ->
 %% @doc Maybe put validate error in changeset.
 %% @end
 %%------------------------------------------------------------------------------
--spec maybe_put_validate_error(
+-spec maybe_put_validation_error(
     Result :: todow_validation:validates_result(),
     Changeset :: t(),
     Key :: any()
 ) -> t().
 
-maybe_put_validate_error({error, Error}, Changeset, Key) ->
+maybe_put_validation_error({error, Error}, Changeset, Key) ->
     todow_changeset:put_error(Changeset, Key, Error);
-maybe_put_validate_error({ok, _Value}, Changeset, _Key) ->
+maybe_put_validation_error({ok, _Value}, Changeset, _Key) ->
     Changeset.
 
 %%%=============================================================================
@@ -464,10 +464,10 @@ changes_without_errors_test() ->
         })
     ).
 
-do_validate_test() ->
+do_validates_test() ->
     ?assertEqual(
         #changeset{action = ?update, errors = #{foo => bar}},
-        validate(
+        validates(
             #changeset{action = ?update},
             [fun(bar) -> {error, bar} end],
             foo,
@@ -476,17 +476,17 @@ do_validate_test() ->
     ),
     ?assertEqual(
         #changeset{action = ?new},
-        validate(#changeset{action = ?new}, [], any_key, any_value)
+        validates(#changeset{action = ?new}, [], any_key, any_value)
     ).
 
-maybe_put_validate_error_test() ->
+maybe_put_validation_error_test() ->
     ?assertEqual(
         #changeset{},
-        maybe_put_validate_error({ok, any_value}, #changeset{}, any_key)
+        maybe_put_validation_error({ok, any_value}, #changeset{}, any_key)
     ),
     ?assertEqual(
         #changeset{errors = #{foo => bar}},
-        maybe_put_validate_error({error, bar}, #changeset{}, foo)
+        maybe_put_validation_error({error, bar}, #changeset{}, foo)
     ).
 
 -endif.

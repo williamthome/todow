@@ -13,7 +13,7 @@
 -type fields() :: nonempty_list(todow_field:t()).
 -type field() ::
     {ok, todow_field:t()} | {error, {not_found, todow_field:name()}}.
--type validate() ::
+-type validates() ::
     {ok, todow_changeset:t()} | {error, todow_changeset:errors()}.
 
 -record(schema, {
@@ -27,7 +27,7 @@
     name/0,
     fields/0,
     field/0,
-    validate/0
+    validates/0
 ]).
 
 -export([
@@ -41,7 +41,7 @@
     field/2,
     is_field/2,
     cast/2, cast/3,
-    validate/2, validate/3
+    validates/2, validates/3
 ]).
 
 %%------------------------------------------------------------------------------
@@ -147,25 +147,25 @@ cast(Schema, Data, Changes) ->
 %% @doc Validates schema.
 %% @end
 %%------------------------------------------------------------------------------
--spec validate(Schema :: t(), Data :: map(), Changes :: map()) -> validate().
+-spec validates(Schema :: t(), Data :: map(), Changes :: map()) -> validates().
 
-validate(Schema, Data, Changes) ->
+validates(Schema, Data, Changes) ->
     {ok, Changeset} = cast(Schema, Data, Changes),
-    validate(Schema, Changeset).
+    validates(Schema, Changeset).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates schema.
 %% @end
 %%------------------------------------------------------------------------------
--spec validate(Schema :: t(), Changeset :: todow_changeset:t()) -> validate().
+-spec validates(Schema :: t(), Changeset :: todow_changeset:t()) -> validates().
 
-validate(Schema, Changeset) ->
+validates(Schema, Changeset) ->
     ValidChanges = todow_changeset:valid_changes(Changeset),
     ChangesetValidated = maps:fold(
         fun(Key, Value, ChangesetAcc) ->
             case field(Schema, Key) of
                 {ok, Field} ->
-                    todow_field:validate_changeset(ChangesetAcc, Field, Value);
+                    todow_field:validates_changeset(ChangesetAcc, Field, Value);
                 {error, {not_found, _FieldName}} ->
                     ChangesetAcc
             end
@@ -311,7 +311,7 @@ defaults_test() ->
         defaults(Schema)
     ).
 
-validate_test() ->
+validates_test() ->
     Schema = #schema{
         name = foo,
         fields = [
@@ -326,7 +326,7 @@ validate_test() ->
             #{foo => <<"bar">>, bar => undefined, baz => <<"baz">>},
             new
         ),
-        validate(Schema, maps:new(), #{foo => <<"bar">>})
+        validates(Schema, maps:new(), #{foo => <<"bar">>})
     ).
 
 -endif.

@@ -73,8 +73,8 @@
 ]).
 
 -export([
-    validate/2,
-    validate_changeset/3
+    validates/2,
+    validates_changeset/3
 ]).
 
 %%------------------------------------------------------------------------------
@@ -191,24 +191,24 @@ validators(#field{validators = Validators}) -> Validators.
 %% @doc Validates field value.
 %% @end
 %%------------------------------------------------------------------------------
--spec validate(
+-spec validates(
     Field :: t(), Value :: any()
 ) -> todow_validation:validates_result().
 
-validate(#field{validators = Validators}, Value) ->
-    todow_validation:validate(Validators, Value).
+validates(#field{validators = Validators}, Value) ->
+    todow_validation:validates(Validators, Value).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates changeset by field and value.
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_changeset(
+-spec validates_changeset(
     Changeset :: changeset:t(), Field :: t(), Value :: any()
 ) -> changeset:t().
 
-validate_changeset(Changeset, Field = #field{name = Key}, Value) ->
+validates_changeset(Changeset, Field = #field{name = Key}, Value) ->
     Validators = do_validators(Field, Value),
-    todow_changeset:validate(Changeset, Validators, Key, Value).
+    todow_changeset:validates(Changeset, Validators, Key, Value).
 
 %%%=============================================================================
 %%% Internal functions

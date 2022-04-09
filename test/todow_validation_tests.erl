@@ -11,7 +11,7 @@
     validates_is_time/1,
     validates_is_datetime/1,
     validates_range/3,
-    validate/2
+    validates/2
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -65,10 +65,10 @@ validates_range_test() ->
     ?assertMatch({error, _}, validates_range(-1, 0, 1)),
     ?assertMatch({ok, 0}, validates_range(0, 0, 1)).
 
-validate_test() ->
+validates_test() ->
     ?assertMatch(
         {error, foo},
-        validate(
+        validates(
             [
                 fun(V) -> {ok, V} end,
                 fun(V) -> {error, V} end,
@@ -79,7 +79,7 @@ validate_test() ->
     ),
     ?assertMatch(
         {ok, foo},
-        validate(
+        validates(
             [
                 fun(V) -> {ok, V} end,
                 fun(V) -> {ok, V} end
@@ -87,4 +87,4 @@ validate_test() ->
             foo
         )
     ),
-    ?assertMatch({ok, foo}, validate([], foo)).
+    ?assertMatch({ok, foo}, validates([], foo)).

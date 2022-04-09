@@ -91,7 +91,7 @@
     range_validator/2
 ]).
 -export([
-    validate/2,
+    validates/2,
     make_error/3, make_error/4
 ]).
 
@@ -326,11 +326,11 @@ range_validator(Min, Max) ->
 %% @doc Validate by recursion. Halts on the first error.
 %% @end
 %%------------------------------------------------------------------------------
--spec validate(
+-spec validates(
     Validators :: validators(), Value :: any()
 ) -> validation_result().
 
-validate(Validators, Value) -> do_validate(Validators, Value, ?OK(Value)).
+validates(Validators, Value) -> do_validates(Validators, Value, ?OK(Value)).
 
 %%------------------------------------------------------------------------------
 %% @doc Gen validation error.
@@ -363,17 +363,17 @@ make_error(Code, Reason, Value, Msg) ->
 %%%=============================================================================
 
 %%------------------------------------------------------------------------------
-%% @doc Process the validate/2 result.
+%% @doc Process the validates/2 result.
 %% @end
 %%------------------------------------------------------------------------------
--spec do_validate(
+-spec do_validates(
     Validators :: validators(), Value :: any(), Result :: validation_result()
 ) -> validation_result().
 
-do_validate([], _Value, Result) ->
+do_validates([], _Value, Result) ->
     Result;
-do_validate(_Validators, _Value, {error, _} = Error) ->
+do_validates(_Validators, _Value, {error, _} = Error) ->
     Error;
-do_validate([Validates | Validators], Value, _Result) ->
+do_validates([Validates | Validators], Value, _Result) ->
     Result = Validates(Value),
-    do_validate(Validators, Value, Result).
+    do_validates(Validators, Value, Result).
