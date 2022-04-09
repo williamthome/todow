@@ -43,16 +43,30 @@
         ?is_time(element(2, DateTime))
 ).
 
--type validates_ok() :: {ok, any()}.
--type validates_error() :: {error, {atom(), any(), string()}}.
--type validates_result() :: validates_ok() | validates_error().
--type validates() :: fun((1) -> validates_result()).
+-type validation_ok(Type) :: {ok, Type}.
+-type validation_error_code() ::
+    bad_arg
+    | unauthorized
+    | forbidden
+    | internal_server_error.
+-type validation_error_reason() :: atom().
+-type validation_error_msg() :: string().
+-type validation_error(Type) ::
+    {error, #{
+        code => validation_error_code(),
+        reason => validation_error_reason(),
+        value => Type,
+        msg => validation_error_msg()
+    }}.
+-type validation_result(Type) :: validation_ok(Type) | validation_error(Type).
+-type validation_result() :: validation_result(any()).
+-type validates() :: fun((1) -> validation_result()).
 -type validations() :: list(validates()).
 
 -export_type([
-    validates_ok/0,
-    validates_error/0,
-    validates_result/0,
+    validation_ok/1,
+    validation_error/1,
+    validation_result/0, validation_result/1,
     validates/0,
     validations/0
 ]).
@@ -86,7 +100,10 @@
     is_datetime_validation/0,
     range_validation/2
 ]).
--export([validate/2]).
+-export([
+    validate/2,
+    make_error/3, make_error/4
+]).
 
 %%------------------------------------------------------------------------------
 %% @doc Check if value is defined.
@@ -116,13 +133,13 @@ in_range(Value, Min, Max) -> ?in_range(Value, Min, Max).
 %% @doc Validates if the value is defined.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_required(Value :: any()) -> validates_result().
+-spec validates_required(Value :: any()) -> validation_result().
 
 validates_required(Value) when ?is_defined(Value) ->
     ?OK(Value);
 validates_required(Value) ->
     Msg = "Value is required",
-    ?ERROR({required, Value, Msg}).
+    make_error(required, Value, Msg).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates required constructor.
@@ -136,13 +153,13 @@ required_validation() -> fun validates_required/1.
 %% @doc Validates if the value is of integer type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_integer(Value :: any()) -> validates_result().
+-spec validates_is_integer(Value :: any()) -> validation_result().
 
 validates_is_integer(Value) when is_integer(Value) ->
     ?OK(Value);
 validates_is_integer(Value) ->
     Msg = "Value must be an integer.",
-    ?ERROR({is_integer, Value, Msg}).
+    make_error(is_integer, Value, Msg).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is integer constructor.
@@ -156,25 +173,25 @@ is_integer_validation() -> fun validates_is_integer/1.
 %% @doc Validates if the value is of float type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_float(Value :: any()) -> validates_result().
+-spec validates_is_float(Value :: any()) -> validation_result().
 
 validates_is_float(Value) when is_float(Value) ->
     ?OK(Value);
 validates_is_float(Value) ->
     Msg = "Value must be a float.",
-    ?ERROR({is_float, Value, Msg}).
+    make_error(is_float, Value, Msg).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates if the value is of number type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_number(Value :: any()) -> validates_result().
+-spec validates_is_number(Value :: any()) -> validation_result().
 
 validates_is_number(Value) when is_number(Value) ->
     ?OK(Value);
 validates_is_number(Value) ->
     Msg = "Value must be a number.",
-    ?ERROR({is_number, Value, Msg}).
+    make_error(is_number, Value, Msg).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is number constructor.
@@ -188,13 +205,13 @@ is_number_validation() -> fun validates_is_number/1.
 %% @doc Validates if the value is of binary type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_binary(Value :: any()) -> validates_result().
+-spec validates_is_binary(Value :: any()) -> validation_result().
 
 validates_is_binary(Value) when is_binary(Value) ->
     ?OK(Value);
 validates_is_binary(Value) ->
     Msg = "Value must be a binary.",
-    ?ERROR({is_binary, Value, Msg}).
+    make_error(is_binary, Value, Msg).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is binary constructor.
@@ -208,13 +225,13 @@ is_binary_validation() -> fun validates_is_binary/1.
 %% @doc Validates if the value is of boolean type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_boolean(Value :: any()) -> validates_result().
+-spec validates_is_boolean(Value :: any()) -> validation_result().
 
 validates_is_boolean(Value) when is_boolean(Value) ->
     ?OK(Value);
 validates_is_boolean(Value) ->
     Msg = "Value must be a boolean.",
-    ?ERROR({is_boolean, Value, Msg}).
+    make_error(is_boolean, Value, Msg).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is boolean constructor.
@@ -236,13 +253,13 @@ is_float_validation() -> fun validates_is_float/1.
 %% @doc Validates if the value is of date type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_date(Value :: any()) -> validates_result().
+-spec validates_is_date(Value :: any()) -> validation_result().
 
 validates_is_date(Value) when ?is_date(Value) ->
     ?OK(Value);
 validates_is_date(Value) ->
     Msg = "Value must be a date.",
-    ?ERROR({is_date, Value, Msg}).
+    make_error(is_date, Value, Msg).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is date constructor.
@@ -256,13 +273,13 @@ is_date_validation() -> fun validates_is_date/1.
 %% @doc Validates if the value is of time type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_time(Value :: any()) -> validates_result().
+-spec validates_is_time(Value :: any()) -> validation_result().
 
 validates_is_time(Value) when ?is_time(Value) ->
     ?OK(Value);
 validates_is_time(Value) ->
     Msg = "Value must be a time.",
-    ?ERROR({is_time, Value, Msg}).
+    make_error(is_time, Value, Msg).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is time constructor.
@@ -276,13 +293,13 @@ is_time_validation() -> fun validates_is_time/1.
 %% @doc Validates if the value is of datetime type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_datetime(Value :: any()) -> validates_result().
+-spec validates_is_datetime(Value :: any()) -> validation_result().
 
 validates_is_datetime(Value) when ?is_datetime(Value) ->
     ?OK(Value);
 validates_is_datetime(Value) ->
     Msg = "Value must be a datetime.",
-    ?ERROR({is_datetime, Value, Msg}).
+    make_error(is_datetime, Value, Msg).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is datetime constructor.
@@ -298,13 +315,13 @@ is_datetime_validation() -> fun validates_is_datetime/1.
 %%------------------------------------------------------------------------------
 -spec validates_range(
     Value :: any(), Min :: integer(), Max :: integer()
-) -> validates_result().
+) -> validation_result().
 
 validates_range(Value, Min, Max) when ?in_range(Value, Min, Max) ->
     ?OK(Value);
 validates_range(Value, Min, Max) ->
     Msg = lists:concat(["Value must a number between ", Min, " and ", Max, "."]),
-    ?ERROR({range, Value, Msg}).
+    make_error(range, Value, Msg).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates range constructor.
@@ -321,9 +338,40 @@ range_validation(Min, Max) ->
 %%------------------------------------------------------------------------------
 -spec validate(
     Validations :: validations(), Value :: any()
-) -> validates_result().
+) -> validation_result().
 
 validate(Validations, Value) -> do_validate(Validations, Value, ?OK(Value)).
+
+%%------------------------------------------------------------------------------
+%% @doc Gen validation error.
+%% @end
+%%------------------------------------------------------------------------------
+-spec make_error(
+    Reason :: validation_error_reason(),
+    Value,
+    Msg :: validation_error_msg()
+) -> validation_error(Value).
+
+make_error(Reason, Value, Msg) -> make_error(bad_arg, Reason, Value, Msg).
+
+%%------------------------------------------------------------------------------
+%% @doc Gen validation error.
+%% @end
+%%------------------------------------------------------------------------------
+-spec make_error(
+    Code :: validation_error_code(),
+    Reason :: validation_error_reason(),
+    Value,
+    Msg :: validation_error_msg()
+) -> validation_error(Value).
+
+make_error(Code, Reason, Value, Msg) ->
+    ?ERROR(#{
+        code => Code,
+        reason => Reason,
+        value => Value,
+        msg => Msg
+    }).
 
 %%%=============================================================================
 %%% Internal functions
@@ -334,8 +382,8 @@ validate(Validations, Value) -> do_validate(Validations, Value, ?OK(Value)).
 %% @end
 %%------------------------------------------------------------------------------
 -spec do_validate(
-    Validations :: validations(), Value :: any(), Result :: validates_result()
-) -> validates_result().
+    Validations :: validations(), Value :: any(), Result :: validation_result()
+) -> validation_result().
 
 do_validate([], _Value, Result) ->
     Result;
