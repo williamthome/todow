@@ -33,30 +33,19 @@
     | datetime
     | currency.
 -type value(Type) :: Type | undefined.
--type status() :: ok | validating | {error, validation_error()}.
-% TODO: More error codes
--type validation_error_code() ::
-    bad_arg
-    | unauthorized
-    | forbidden
-    | internal_server_error.
--type validation_error_reason() :: atom().
--type validation_error() :: {
-    Code :: validation_error_code(),
-    Reason :: validation_error_reason(),
-    Value :: any()
-}.
--type validates() :: fun((1) -> ok | {error, validation_error()}).
--type validators() :: validates() | list(validates()).
+-type status(ValueType) ::
+    ok | validating | todow_validation:validation_error(ValueType).
+-type validators() ::
+    todow_validation:validates() | todow_validation:validations().
 -type default() :: fun(() -> any()) | any().
 
 % TODO: Cast?
 % TODO: Secret flag to hide value on validation_error
--type t(Type) :: #{
+-type t(ValueType) :: #{
     name => name(),
     type => type(),
-    value => value(Type),
-    status => status(),
+    value => value(ValueType),
+    status => status(ValueType),
     default => default(),
     validators => validators()
 }.
