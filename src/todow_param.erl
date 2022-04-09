@@ -36,7 +36,7 @@
 -type status(ValueType) ::
     ok | validating | todow_validation:validation_error(ValueType).
 -type validators() ::
-    todow_validation:validates() | todow_validation:validations().
+    todow_validation:validates() | todow_validation:validators().
 -type default() :: fun(() -> any()) | any().
 
 % TODO: Cast?

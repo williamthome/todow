@@ -3,7 +3,7 @@
 -define(private, {private, true}).
 -define(required, {required, true}).
 -define(default(Default), {default, Default}).
--define(validations(Validations), {validations, Validations}).
+-define(validators(Validators), {validators, Validators}).
 
 -define(field(Name, Type, Options),
     todow_field:new(Name, Type, maps:from_list(Options))

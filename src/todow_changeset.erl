@@ -302,13 +302,13 @@ cast(Data, Changes, ValidKeys, Options) when
 %%------------------------------------------------------------------------------
 -spec validate(
     Changeset :: t(),
-    Validations :: todow:validations(),
+    Validators :: todow_validation:validators(),
     Key :: any(),
     Value :: any()
 ) -> t().
 
-validate(Changeset, Validations, Key, Value) ->
-    ValidateResult = todow_validation:validate(Validations, Value),
+validate(Changeset, Validators, Key, Value) ->
+    ValidateResult = todow_validation:validate(Validators, Value),
     maybe_put_validate_error(ValidateResult, Changeset, Key).
 
 %%------------------------------------------------------------------------------

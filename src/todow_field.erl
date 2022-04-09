@@ -13,18 +13,19 @@
 -define(DEFAULT_PRIVATE, false).
 -define(DEFAULT_REQUIRED, false).
 -define(DEFAULT_VALUE, undefined).
--define(DEFAULT_VALIDATIONS, []).
+-define(DEFAULT_VALIDATORS, []).
 
 -define(DEFAULT_OPTIONS, #{
     private => ?DEFAULT_PRIVATE,
     required => ?DEFAULT_REQUIRED,
     default => ?DEFAULT_VALUE,
-    validations => ?DEFAULT_VALIDATIONS
+    validators => ?DEFAULT_VALIDATORS
 }).
 
 -type name() :: atom().
 -type type() ::
-    ?integer
+    atom()
+    | ?integer
     | ?float
     | ?number
     | ?binary
@@ -36,7 +37,7 @@
 -type private() :: boolean().
 -type required() :: boolean().
 -type default() :: any().
--type validations() :: todow_validation:validations().
+-type validators() :: todow_validation:validators().
 
 -record(field, {
     name :: name(),
@@ -44,7 +45,7 @@
     private = ?DEFAULT_PRIVATE :: private(),
     required = ?DEFAULT_REQUIRED :: required(),
     default = ?DEFAULT_VALUE :: default(),
-    validations = ?DEFAULT_VALIDATIONS :: validations()
+    validators = ?DEFAULT_VALIDATORS :: validators()
 }).
 -opaque t() :: #field{}.
 
@@ -55,7 +56,7 @@
     private/0,
     required/0,
     default/0,
-    validations/0
+    validators/0
 ]).
 
 -export([
@@ -68,7 +69,7 @@
     private/1,
     required/1,
     default/1,
-    validations/1
+    validators/1
 ]).
 
 -export([
@@ -179,12 +180,12 @@ required(#field{required = Required}) -> Required.
 default(#field{default = Default}) -> Default.
 
 %%------------------------------------------------------------------------------
-%% @doc Get field validations.
+%% @doc Get field validators.
 %% @end
 %%------------------------------------------------------------------------------
--spec validations(Field :: t()) -> validations().
+-spec validators(Field :: t()) -> validators().
 
-validations(#field{validations = Validations}) -> Validations.
+validators(#field{validators = Validators}) -> Validators.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates field value.
@@ -194,8 +195,8 @@ validations(#field{validations = Validations}) -> Validations.
     Field :: t(), Value :: any()
 ) -> todow_validation:validates_result().
 
-validate(#field{validations = Validations}, Value) ->
-    todow_validation:validate(Validations, Value).
+validate(#field{validators = Validators}, Value) ->
+    todow_validation:validate(Validators, Value).
 
 %%------------------------------------------------------------------------------
 %% @doc Validates changeset by field and value.
@@ -206,8 +207,8 @@ validate(#field{validations = Validations}, Value) ->
 ) -> changeset:t().
 
 validate_changeset(Changeset, Field = #field{name = Key}, Value) ->
-    Validations = do_validations(Field, Value),
-    todow_changeset:validate(Changeset, Validations, Key, Value).
+    Validators = do_validators(Field, Value),
+    todow_changeset:validate(Changeset, Validators, Key, Value).
 
 %%%=============================================================================
 %%% Internal functions
@@ -225,7 +226,7 @@ do_new(#{
     private := Private,
     required := Required,
     default := Default,
-    validations := Validations
+    validators := Validators
 }) ->
     #field{
         name = Name,
@@ -233,70 +234,71 @@ do_new(#{
         private = Private,
         required = Required,
         default = Default,
-        validations = Validations
+        validators = Validators
     }.
 
 %%------------------------------------------------------------------------------
-%% @doc Do validations.
+%% @doc Do validators.
 %% @end
 %%------------------------------------------------------------------------------
--spec do_validations(Field :: t(), Value :: any()) -> validations().
+-spec do_validators(Field :: t(), Value :: any()) -> validators().
 
-do_validations(
-    #field{required = false, validations = Validations},
+do_validators(
+    #field{required = false, validators = Validators},
     _Value = undefined
 ) ->
-    Validations;
-do_validations(
-    Field = #field{validations = Validations},
+    Validators;
+do_validators(
+    Field = #field{validators = Validators},
     _Value
 ) ->
-    Validations0 = add_type_validation(Field, Validations),
-    maybe_add_required_validation(Field, Validations0).
+    Validators0 = add_type_validator(Field, Validators),
+    maybe_add_required_validator(Field, Validators0).
 
 %%------------------------------------------------------------------------------
-%% @doc Maybe add the type validation to validations list.
+%% @doc Maybe add the type validator to validators list.
 %% @end
 %%------------------------------------------------------------------------------
--spec add_type_validation(
-    FieldOrType :: t() | type(), Validations :: validations()
-) -> validations().
+-spec add_type_validator(
+    FieldOrType :: t() | type(), Validators :: validators()
+) -> validators().
 
-add_type_validation(FieldOrType, Validations) ->
-    [get_type_validation(FieldOrType) | Validations].
+add_type_validator(FieldOrType, Validators) ->
+    [get_type_validator(FieldOrType) | Validators].
 
 %%------------------------------------------------------------------------------
-%% @doc If valid type, returns the type validation.
+%% @doc If valid type, returns the type validator.
 %% @end
 %%------------------------------------------------------------------------------
--spec get_type_validation(
+-spec get_type_validator(
     FieldOrType :: t() | type()
 ) -> todow_validation:validates() | undefined.
 
-get_type_validation(#field{type = Type}) -> get_type_validation(Type);
-get_type_validation(?integer) -> todow_validation:is_integer_validation();
-get_type_validation(?float) -> todow_validation:is_float_validation();
-get_type_validation(?number) -> todow_validation:is_number_validation();
-get_type_validation(?binary) -> todow_validation:is_binary_validation();
-get_type_validation(?boolean) -> todow_validation:is_boolean_validation();
-get_type_validation(?date) -> todow_validation:is_date_validation();
-get_type_validation(?time) -> todow_validation:is_time_validation();
-get_type_validation(?datetime) -> todow_validation:is_datetime_validation().
+get_type_validator(#field{type = Type}) -> get_type_validator(Type);
+get_type_validator(?integer) -> todow_validation:is_integer_validator();
+get_type_validator(?float) -> todow_validation:is_float_validator();
+get_type_validator(?number) -> todow_validation:is_number_validator();
+get_type_validator(?binary) -> todow_validation:is_binary_validator();
+get_type_validator(?boolean) -> todow_validation:is_boolean_validator();
+get_type_validator(?date) -> todow_validation:is_date_validator();
+get_type_validator(?time) -> todow_validation:is_time_validator();
+get_type_validator(?datetime) -> todow_validation:is_datetime_validator();
+get_type_validator(_Type) -> undefined.
 
 %%------------------------------------------------------------------------------
-%% @doc Maybe add required validation to validations list.
+%% @doc Maybe add required validation to validators list.
 %% @end
 %%------------------------------------------------------------------------------
--spec maybe_add_required_validation(
-    FieldOrBoolean :: t() | boolean(), Validations :: validations()
-) -> validations().
+-spec maybe_add_required_validator(
+    FieldOrBoolean :: t() | boolean(), Validators :: validators()
+) -> validators().
 
-maybe_add_required_validation(#field{required = Required}, Validations) ->
-    maybe_add_required_validation(Required, Validations);
-maybe_add_required_validation(_Required = true, Validations) ->
-    [todow_validation:required_validation() | Validations];
-maybe_add_required_validation(_Required = false, Validations) ->
-    Validations.
+maybe_add_required_validator(#field{required = Required}, Validators) ->
+    maybe_add_required_validator(Required, Validators);
+maybe_add_required_validator(_Required = true, Validators) ->
+    [todow_validation:required_validator() | Validators];
+maybe_add_required_validator(_Required = false, Validators) ->
+    Validators.
 
 %%------------------------------------------------------------------------------
 %% @doc Merge options with default options.

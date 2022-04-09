@@ -12,8 +12,8 @@ get_query(Param, Context, Options) ->
         {ok, Value} ->
             MaybeDefault = todow_utils:maybe_default(default, Value, Options),
             MaybeInt = todow_convert_utils:maybe_to_integer(MaybeDefault),
-            Validations = maps:get(validations, Options, []),
-            case todow_validation:validate(Validations, MaybeInt) of
+            Validators = maps:get(validators, Options, []),
+            case todow_validation:validate(Validators, MaybeInt) of
                 {ok, MaybeInt} -> {ok, MaybeInt};
                 Error -> Error
             end;

@@ -52,13 +52,13 @@
     todow_result(ValueType, validation_what_error(ValueType)).
 -type validation_result() :: validation_result(any()).
 -type validates() :: fun((1) -> validation_result()).
--type validations() :: list(validates()).
+-type validators() :: list(validates()).
 
 -export_type([
     validation_error/1,
     validation_result/0, validation_result/1,
     validates/0,
-    validations/0
+    validators/0
 ]).
 
 -export([
@@ -79,16 +79,16 @@
     validates_range/3
 ]).
 -export([
-    required_validation/0,
-    is_integer_validation/0,
-    is_float_validation/0,
-    is_number_validation/0,
-    is_binary_validation/0,
-    is_boolean_validation/0,
-    is_date_validation/0,
-    is_time_validation/0,
-    is_datetime_validation/0,
-    range_validation/2
+    required_validator/0,
+    is_integer_validator/0,
+    is_float_validator/0,
+    is_number_validator/0,
+    is_binary_validator/0,
+    is_boolean_validator/0,
+    is_date_validator/0,
+    is_time_validator/0,
+    is_datetime_validator/0,
+    range_validator/2
 ]).
 -export([
     validate/2,
@@ -135,9 +135,9 @@ validates_required(Value) ->
 %% @doc Validates required constructor.
 %% @end
 %%------------------------------------------------------------------------------
--spec required_validation() -> validates().
+-spec required_validator() -> validates().
 
-required_validation() -> fun validates_required/1.
+required_validator() -> fun validates_required/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates if the value is of integer type.
@@ -155,9 +155,9 @@ validates_is_integer(Value) ->
 %% @doc Validates is integer constructor.
 %% @end
 %%------------------------------------------------------------------------------
--spec is_integer_validation() -> validates().
+-spec is_integer_validator() -> validates().
 
-is_integer_validation() -> fun validates_is_integer/1.
+is_integer_validator() -> fun validates_is_integer/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates if the value is of float type.
@@ -187,9 +187,9 @@ validates_is_number(Value) ->
 %% @doc Validates is number constructor.
 %% @end
 %%------------------------------------------------------------------------------
--spec is_number_validation() -> validates().
+-spec is_number_validator() -> validates().
 
-is_number_validation() -> fun validates_is_number/1.
+is_number_validator() -> fun validates_is_number/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates if the value is of binary type.
@@ -207,9 +207,9 @@ validates_is_binary(Value) ->
 %% @doc Validates is binary constructor.
 %% @end
 %%------------------------------------------------------------------------------
--spec is_binary_validation() -> validates().
+-spec is_binary_validator() -> validates().
 
-is_binary_validation() -> fun validates_is_binary/1.
+is_binary_validator() -> fun validates_is_binary/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates if the value is of boolean type.
@@ -227,17 +227,17 @@ validates_is_boolean(Value) ->
 %% @doc Validates is boolean constructor.
 %% @end
 %%------------------------------------------------------------------------------
--spec is_boolean_validation() -> validates().
+-spec is_boolean_validator() -> validates().
 
-is_boolean_validation() -> fun validates_is_boolean/1.
+is_boolean_validator() -> fun validates_is_boolean/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates is float constructor.
 %% @end
 %%------------------------------------------------------------------------------
--spec is_float_validation() -> validates().
+-spec is_float_validator() -> validates().
 
-is_float_validation() -> fun validates_is_float/1.
+is_float_validator() -> fun validates_is_float/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates if the value is of date type.
@@ -255,9 +255,9 @@ validates_is_date(Value) ->
 %% @doc Validates is date constructor.
 %% @end
 %%------------------------------------------------------------------------------
--spec is_date_validation() -> validates().
+-spec is_date_validator() -> validates().
 
-is_date_validation() -> fun validates_is_date/1.
+is_date_validator() -> fun validates_is_date/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates if the value is of time type.
@@ -275,9 +275,9 @@ validates_is_time(Value) ->
 %% @doc Validates is time constructor.
 %% @end
 %%------------------------------------------------------------------------------
--spec is_time_validation() -> validates().
+-spec is_time_validator() -> validates().
 
-is_time_validation() -> fun validates_is_time/1.
+is_time_validator() -> fun validates_is_time/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates if the value is of datetime type.
@@ -295,9 +295,9 @@ validates_is_datetime(Value) ->
 %% @doc Validates is datetime constructor.
 %% @end
 %%------------------------------------------------------------------------------
--spec is_datetime_validation() -> validates().
+-spec is_datetime_validator() -> validates().
 
-is_datetime_validation() -> fun validates_is_datetime/1.
+is_datetime_validator() -> fun validates_is_datetime/1.
 
 %%------------------------------------------------------------------------------
 %% @doc Validates number range.
@@ -317,9 +317,9 @@ validates_range(Value, Min, Max) ->
 %% @doc Validates range constructor.
 %% @end
 %%------------------------------------------------------------------------------
--spec range_validation(Min :: integer(), Max :: integer()) -> validates().
+-spec range_validator(Min :: integer(), Max :: integer()) -> validates().
 
-range_validation(Min, Max) ->
+range_validator(Min, Max) ->
     fun(Value) -> validates_range(Value, Min, Max) end.
 
 %%------------------------------------------------------------------------------
@@ -327,10 +327,10 @@ range_validation(Min, Max) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec validate(
-    Validations :: validations(), Value :: any()
+    Validators :: validators(), Value :: any()
 ) -> validation_result().
 
-validate(Validations, Value) -> do_validate(Validations, Value, ?OK(Value)).
+validate(Validators, Value) -> do_validate(Validators, Value, ?OK(Value)).
 
 %%------------------------------------------------------------------------------
 %% @doc Gen validation error.
@@ -367,13 +367,13 @@ make_error(Code, Reason, Value, Msg) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec do_validate(
-    Validations :: validations(), Value :: any(), Result :: validation_result()
+    Validators :: validators(), Value :: any(), Result :: validation_result()
 ) -> validation_result().
 
 do_validate([], _Value, Result) ->
     Result;
-do_validate(_Validations, _Value, {error, _} = Error) ->
+do_validate(_Validators, _Value, {error, _} = Error) ->
     Error;
-do_validate([Validates | Validations], Value, _Result) ->
+do_validate([Validates | Validators], Value, _Result) ->
     Result = Validates(Value),
-    do_validate(Validations, Value, Result).
+    do_validate(Validators, Value, Result).

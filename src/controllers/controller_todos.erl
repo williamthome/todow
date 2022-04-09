@@ -44,7 +44,7 @@ render(index = Action, Context) ->
   do_render(?TEMPLATE_INDEX, Action, Context);
 
 render(edit = Action, Context) ->
-  case todow_http:get_query(id, Context, #{validations => [validate_is_integer]}) of
+  case todow_http:get_query(id, Context, #{validators => [validate_is_integer]}) of
     {ok, Id} ->
       FormAction = todow_router:url_todos(),
       Vars = [ {id, Id}, {form_method, ?METHOD_PATCH}, {form_action, FormAction} ],
@@ -59,7 +59,7 @@ render(new = Action, Context) ->
   do_render(?TEMPLATE_NEW_OR_EDIT, Action, Context, Vars);
 
 render(show = Action, Context) ->
-  case todow_http:get_query(id, Context, #{validations => [validate_is_integer]}) of
+  case todow_http:get_query(id, Context, #{validators => [validate_is_integer]}) of
     {ok, Id} ->
       Vars = [ {id, Id} ],
       do_render(?TEMPLATE_SHOW, Action, Context, Vars);
