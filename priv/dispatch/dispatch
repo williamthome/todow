@@ -1,4 +1,6 @@
 [
+  % TODO: Maybe catch all in one route and match in a custom controller
+  % e.g. {any, ['*'], my_controller, [{foo, bar}]},
   {home, [], controller_template, [{template, "pages/home/index.tpl"}]},
   {page, [], controller_template, [{template, "pages/home/index.tpl"}]},
 
