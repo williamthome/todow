@@ -1,3 +1,20 @@
+-type todow_ok(Type) :: {ok, Type}.
+-type todow_error_code() ::
+    bad_arg
+    | unauthorized
+    | forbidden
+    | internal_server_error.
+-type todow_error_msg() :: string().
+-type todow_error(What) ::
+    {error, #{
+        code => todow_error_code(),
+        what => What,
+        msg => todow_error_msg()
+    }}.
+-type todow_result(OkType, WhatErrorType) ::
+    todow_ok(OkType) | todow_error(WhatErrorType).
+-type todow_result() :: todow_result(any(), any()).
+
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
@@ -24,7 +41,19 @@
 
 -define(OK(Result), {ok, Result}).
 -ifdef(TEST).
--define(ERROR(Reason), {error, Reason}).
+-define(ERROR(Code, What, Msg),
+    {error, #{
+        code => Code,
+        what => What,
+        msg => Msg
+    }
+}).
 -else.
--define(ERROR(Reason), ?INSPECT({error, Reason})).
+-define(ERROR(Code, What, Msg), ?INSPECT(
+    {error, #{
+        code => Code,
+        what => What,
+        msg => Msg
+    }
+})).
 -endif.

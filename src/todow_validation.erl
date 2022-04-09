@@ -43,28 +43,18 @@
         ?is_time(element(2, DateTime))
 ).
 
--type validation_ok(Type) :: {ok, Type}.
--type validation_error_code() ::
-    bad_arg
-    | unauthorized
-    | forbidden
-    | internal_server_error.
 -type validation_error_reason() :: atom().
--type validation_error_msg() :: string().
--type validation_error(Type) ::
-    {error, #{
-        code => validation_error_code(),
-        reason => validation_error_reason(),
-        value => Type,
-        msg => validation_error_msg()
-    }}.
--type validation_result(Type) :: validation_ok(Type) | validation_error(Type).
+-type validation_what_error(ValueType) ::
+    {Reason :: validation_error_reason(), Value :: ValueType}.
+-type validation_error(ValueType) ::
+    todow_error(validation_what_error(ValueType)).
+-type validation_result(ValueType) ::
+    todow_result(ValueType, validation_what_error(ValueType)).
 -type validation_result() :: validation_result(any()).
 -type validates() :: fun((1) -> validation_result()).
 -type validations() :: list(validates()).
 
 -export_type([
-    validation_ok/1,
     validation_error/1,
     validation_result/0, validation_result/1,
     validates/0,
@@ -349,7 +339,7 @@ validate(Validations, Value) -> do_validate(Validations, Value, ?OK(Value)).
 -spec make_error(
     Reason :: validation_error_reason(),
     Value,
-    Msg :: validation_error_msg()
+    Msg :: todow_error_msg()
 ) -> validation_error(Value).
 
 make_error(Reason, Value, Msg) -> make_error(bad_arg, Reason, Value, Msg).
@@ -359,19 +349,14 @@ make_error(Reason, Value, Msg) -> make_error(bad_arg, Reason, Value, Msg).
 %% @end
 %%------------------------------------------------------------------------------
 -spec make_error(
-    Code :: validation_error_code(),
+    Code :: todow_error_code(),
     Reason :: validation_error_reason(),
     Value,
-    Msg :: validation_error_msg()
+    Msg :: todow_error_msg()
 ) -> validation_error(Value).
 
 make_error(Code, Reason, Value, Msg) ->
-    ?ERROR(#{
-        code => Code,
-        reason => Reason,
-        value => Value,
-        msg => Msg
-    }).
+    ?ERROR(Code, {Reason, Value}, Msg).
 
 %%%=============================================================================
 %%% Internal functions

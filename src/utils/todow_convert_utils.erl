@@ -19,8 +19,8 @@
   must_to_string_mult/1, must_to_string_mult/2
 ]).
 
--define(NOT_INTEGER_ERROR, ?ERROR(not_integer)).
--define(NOT_STRING_ERROR, ?ERROR(not_string)).
+-define(NOT_INTEGER_ERROR, {error, not_integer}).
+-define(NOT_STRING_ERROR, {error, not_string}).
 
 %%------------------------------------------------------------------------------
 %% @doc Try convert to integer.
