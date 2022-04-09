@@ -113,6 +113,14 @@ merge_validators(A, B) ->
 
 -ifdef(TEST).
 
+is_param_test() ->
+    ?assert(
+        ?is_param(#{
+            name => foo, type => atom, default => undefined, validators => []
+        })
+    ),
+    ?assertNot(?is_param(false)).
+
 unwrap_default_test() ->
     ?assertEqual(foo, unwrap_default(#{default => foo})),
     ?assertEqual(foo, unwrap_default(#{default => fun() -> foo end})).
