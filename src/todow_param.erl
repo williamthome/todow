@@ -3,6 +3,8 @@
 -include("./include/todow.hrl").
 
 -define(PARAM_DEFAULTS, #{
+    value => undefined,
+    status => ok,
     default => undefined,
     validators => []
 }).
@@ -11,6 +13,8 @@
     is_map(X) andalso
         is_map_key(name, X) andalso
         is_map_key(type, X) andalso
+        is_map_key(value, X) andalso
+        is_map_key(status, X) andalso
         is_map_key(default, X) andalso
         is_map_key(validators, X)
 ).
@@ -28,6 +32,8 @@
     | time
     | datetime
     | currency.
+-type value(Type) :: Type | undefined.
+-type status() :: ok | validating | {error, validation_error()}.
 % TODO: More error codes
 -type validation_error_code() ::
     bad_arg
@@ -46,15 +52,18 @@
 
 % TODO: Cast?
 % TODO: Secret flag to hide value on validation_error
--type t() :: #{
+-type t(Type) :: #{
     name => name(),
     type => type(),
+    value => value(Type),
+    status => status(),
     default => default(),
     validators => validators()
 }.
+-type t() :: t(any()).
 
 -export_type([
-    t/0
+    t/0, t/1
 ]).
 
 -export([
@@ -116,7 +125,12 @@ merge_validators(A, B) ->
 is_param_test() ->
     ?assert(
         ?is_param(#{
-            name => foo, type => atom, default => undefined, validators => []
+            name => foo,
+            type => atom,
+            value => undefined,
+            status => ok,
+            default => undefined,
+            validators => []
         })
     ),
     ?assertNot(?is_param(false)).
