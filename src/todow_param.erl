@@ -83,9 +83,12 @@ unwrap_default(Def) -> Def.
 
 -spec merge_default(DefA :: map(), DefB :: map()) -> any().
 
-merge_default(#{default := undefined}, #{default := DefB}) -> DefB;
-merge_default(#{default := DefA}, _DefB) when DefA =/= undefined -> DefA;
-merge_default(#{}, #{default := DefB}) -> DefB;
+merge_default(#{default := undefined}, #{default := DefB}) ->
+    DefB;
+merge_default(#{default := DefA}, _DefB) when DefA =/= undefined ->
+    DefA;
+merge_default(#{}, #{default := DefB}) ->
+    DefB;
 merge_default(A, B) ->
     fun() ->
         case unwrap_default(A) of
