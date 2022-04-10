@@ -1,9 +1,16 @@
 -module(todow_convert_utils).
 
--type not_integer() :: {error, not_integer}.
--type not_string() :: {error, not_string}.
+-type convert_error_reason() :: not_integer | not_string.
+-type convert_error(Value) ::
+    {Reason :: convert_error_reason(), Value}.
+-type convert_error_result(Value) ::
+    todow:error_result(convert_error(Value)).
+-type convert_result(ExpectedType, ValueType) ::
+    todow:result(ExpectedType, convert_error(ValueType)).
 
--export_type([ not_integer/0, not_string/0 ]).
+-export_type([
+  convert_result/2
+]).
 
 -export([
   to_integer/1, to_integer/2,
@@ -17,36 +24,31 @@
   must_to_string_mult/1, must_to_string_mult/2
 ]).
 
--define(NOT_INTEGER_ERROR, {error, not_integer}).
--define(NOT_STRING_ERROR, {error, not_string}).
-
 %%------------------------------------------------------------------------------
 %% @doc Try convert to integer.
 %% @end
 %%------------------------------------------------------------------------------
--spec to_integer(Value :: any()) -> {ok, integer()} | {error, not_integer}.
+-spec to_integer(Value) -> convert_result(integer(), Value).
 
 to_integer(Value) -> to_integer(Value, #{}).
 
--spec to_integer(
-  Value :: any(), Options :: map()
-) -> {ok, integer()} | {error, not_integer}.
+-spec to_integer(Value, Options :: map()) -> convert_result(integer(), Value).
 
-to_integer(undefined, _Options) ->
-  ?NOT_INTEGER_ERROR;
+to_integer(Value = undefined, _Options) ->
+  error_not_integer(Value);
 to_integer(Value, _Options) when is_binary(Value) ->
   try
     {ok, erlang:binary_to_integer(Value)}
   catch
-    _:_ -> ?NOT_INTEGER_ERROR
+    _:_ -> error_not_integer(Value)
   end;
 to_integer(Value, _Options) when is_list(Value) ->
   try
     {ok, erlang:list_to_integer(Value)}
   catch
-    _:_ -> ?NOT_INTEGER_ERROR
+    _:_ -> error_not_integer(Value)
   end;
-to_integer(_Value, _Options) -> ?NOT_INTEGER_ERROR.
+to_integer(Value, _Options) -> error_not_integer(Value).
 
 %%------------------------------------------------------------------------------
 %% @doc If converted returns an integer, otherwise the input value.
@@ -93,16 +95,14 @@ must_to_integer_mult(List, Options) ->
 %% @doc Try convert to string.
 %% @end
 %%------------------------------------------------------------------------------
--spec to_string(Value :: any()) -> {ok, string()} | {error, not_string}.
+-spec to_string(Value) -> todow:result(string(), Value).
 
 to_string(Value) -> to_string(Value, #{}).
 
--spec to_string(
-  Value :: any(), Options :: map()
-) -> {ok, string()} | {error, not_string}.
+-spec to_string(Value, Options :: map()) -> todow:result(string(), Value).
 
-to_string(undefined, _Options) ->
-  ?NOT_STRING_ERROR;
+to_string(Value = undefined, _Options) ->
+  error_not_string(Value);
 to_string(Value, _Options) when is_list(Value) ->
   try
     case io_lib:deep_latin1_char_list(Value) of
@@ -110,57 +110,57 @@ to_string(Value, _Options) when is_list(Value) ->
       false -> {ok, lists:concat([ must_to_string(X) || X <- Value ])}
     end
   catch
-    _:_ -> ?NOT_STRING_ERROR
+    _:_ -> error_not_string(Value)
   end;
 to_string(Value, _Options) when is_integer(Value) ->
   try
     {ok, erlang:integer_to_list(Value)}
   catch
-    _:_ -> ?NOT_STRING_ERROR
+    _:_ -> error_not_string(Value)
   end;
 to_string(Value, _Options) when is_atom(Value) ->
   try
     {ok, erlang:atom_to_list(Value)}
   catch
-    _:_ -> ?NOT_STRING_ERROR
+    _:_ -> error_not_string(Value)
   end;
 to_string(Value, _Options) when is_binary(Value) ->
   try
     {ok, erlang:binary_to_list(Value)}
   catch
-    _:_ -> ?NOT_STRING_ERROR
+    _:_ -> error_not_string(Value)
   end;
 to_string(Value, Options) when is_float(Value) ->
   try
     {ok, erlang:float_to_list(Value, float_options(Options))}
   catch
-    _:_ -> ?NOT_STRING_ERROR
+    _:_ -> error_not_string(Value)
   end;
 to_string(Value, _Options) when is_tuple(Value) ->
   try
     to_string(erlang:tuple_to_list(Value))
   catch
-    _:_ -> ?NOT_STRING_ERROR
+    _:_ -> error_not_string(Value)
   end;
 to_string(Value, _Options) when is_bitstring(Value) ->
   try
     {ok, erlang:bitstring_to_list(Value)}
   catch
-    _:_ -> ?NOT_STRING_ERROR
+    _:_ -> error_not_string(Value)
   end;
 to_string(Value, _Options) when is_pid(Value) ->
   try
     {ok, erlang:pid_to_list(Value)}
   catch
-    _:_ -> ?NOT_STRING_ERROR
+    _:_ -> error_not_string(Value)
   end;
 to_string(Value, _Options) when is_port(Value) ->
   try
     {ok, erlang:port_to_list(Value)}
   catch
-    _:_ -> ?NOT_STRING_ERROR
+    _:_ -> error_not_string(Value)
   end;
-to_string(_Value, _Options) -> ?NOT_STRING_ERROR.
+to_string(Value, _Options) -> error_not_string(Value).
 
 %%------------------------------------------------------------------------------
 %% @doc If converted returns a string, otherwise the input value.
@@ -213,6 +213,18 @@ must_to_string_mult(List, Options) ->
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
+
+-spec error_not_integer(Value) -> convert_error_result(Value).
+
+error_not_integer(Value) ->
+  todow:error(bad_arg, {not_integer, Value}, "Integer value expected.").
+
+-spec error_not_string(Value) -> convert_error_result(Value).
+
+error_not_string(Value) ->
+  todow:error(bad_arg, {not_string, Value}, "String value expected.").
+
+-spec float_options(Options :: any()) -> proplist:proplist().
 
 float_options(#{decimals := {Precision, compact}}) -> [{decimals, Precision}, compact];
 float_options(#{decimals := Precision}) -> [{decimals, Precision}];

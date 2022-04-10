@@ -26,6 +26,7 @@
 -include_lib("zotonic_core/include/zotonic.hrl").
 
 -type result_ok(Type) :: {ok, Type}.
+% TODO: Change bad_arg to bad_request
 -type error_code() ::
     bad_arg
     | unauthorized

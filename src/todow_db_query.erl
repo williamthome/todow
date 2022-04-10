@@ -44,8 +44,7 @@
 %% @doc Quotes a string.
 %% @end
 %%------------------------------------------------------------------------------
-% TODO: Change to todow:result()
--spec quote(Value :: any()) -> {ok, string()} | todow_convert_utils:not_string().
+-spec quote(Value) -> todow_convert_utils:convert_result(string(), Value).
 
 quote(Value) ->
     case todow_convert_utils:to_string(Value) of

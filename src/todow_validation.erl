@@ -48,14 +48,13 @@
     todow:error_result(validation_error(Value)).
 -type validation_result(Value) ::
     todow:result(Value, validation_error(Value)).
--type validation_result() :: validation_result(any()).
--type validates() :: fun((1) -> validation_result()).
+-type validates() :: fun((Value) -> validation_result(Value)).
 -type validators() :: list(validates()).
 
 -export_type([
     validation_error/1,
     validation_error_result/1,
-    validation_result/0, validation_result/1,
+    validation_result/1,
     validates/0,
     validators/0
 ]).
@@ -122,7 +121,7 @@ in_range(Value, Min, Max) -> ?in_range(Value, Min, Max).
 %% @doc Validates if the value is defined.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_required(Value :: any()) -> validation_result().
+-spec validates_required(Value) -> validation_result(Value).
 
 validates_required(Value) when ?is_defined(Value) ->
     todow:ok(Value);
@@ -142,7 +141,7 @@ required_validator() -> fun validates_required/1.
 %% @doc Validates if the value is of integer type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_integer(Value :: any()) -> validation_result().
+-spec validates_is_integer(Value) -> validation_result(Value).
 
 validates_is_integer(Value) when is_integer(Value) ->
     todow:ok(Value);
@@ -162,7 +161,7 @@ is_integer_validator() -> fun validates_is_integer/1.
 %% @doc Validates if the value is of float type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_float(Value :: any()) -> validation_result().
+-spec validates_is_float(Value) -> validation_result(Value).
 
 validates_is_float(Value) when is_float(Value) ->
     todow:ok(Value);
@@ -174,7 +173,7 @@ validates_is_float(Value) ->
 %% @doc Validates if the value is of number type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_number(Value :: any()) -> validation_result().
+-spec validates_is_number(Value) -> validation_result(Value).
 
 validates_is_number(Value) when is_number(Value) ->
     todow:ok(Value);
@@ -194,7 +193,7 @@ is_number_validator() -> fun validates_is_number/1.
 %% @doc Validates if the value is of binary type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_binary(Value :: any()) -> validation_result().
+-spec validates_is_binary(Value) -> validation_result(Value).
 
 validates_is_binary(Value) when is_binary(Value) ->
     todow:ok(Value);
@@ -214,7 +213,7 @@ is_binary_validator() -> fun validates_is_binary/1.
 %% @doc Validates if the value is of boolean type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_boolean(Value :: any()) -> validation_result().
+-spec validates_is_boolean(Value) -> validation_result(Value).
 
 validates_is_boolean(Value) when is_boolean(Value) ->
     todow:ok(Value);
@@ -242,7 +241,7 @@ is_float_validator() -> fun validates_is_float/1.
 %% @doc Validates if the value is of date type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_date(Value :: any()) -> validation_result().
+-spec validates_is_date(Value) -> validation_result(Value).
 
 validates_is_date(Value) when ?is_date(Value) ->
     todow:ok(Value);
@@ -262,7 +261,7 @@ is_date_validator() -> fun validates_is_date/1.
 %% @doc Validates if the value is of time type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_time(Value :: any()) -> validation_result().
+-spec validates_is_time(Value) -> validation_result(Value).
 
 validates_is_time(Value) when ?is_time(Value) ->
     todow:ok(Value);
@@ -282,7 +281,7 @@ is_time_validator() -> fun validates_is_time/1.
 %% @doc Validates if the value is of datetime type.
 %% @end
 %%------------------------------------------------------------------------------
--spec validates_is_datetime(Value :: any()) -> validation_result().
+-spec validates_is_datetime(Value) -> validation_result(Value).
 
 validates_is_datetime(Value) when ?is_datetime(Value) ->
     todow:ok(Value);
@@ -303,8 +302,10 @@ is_datetime_validator() -> fun validates_is_datetime/1.
 %% @end
 %%------------------------------------------------------------------------------
 -spec validates_range(
-    Value :: any(), Min :: integer(), Max :: integer()
-) -> validation_result().
+    Value,
+    Min :: integer(),
+    Max :: integer()
+) -> validation_result(Value).
 
 validates_range(Value, Min, Max) when ?in_range(Value, Min, Max) ->
     todow:ok(Value);
@@ -326,8 +327,9 @@ range_validator(Min, Max) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec validates(
-    Validators :: validators(), Value :: any()
-) -> validation_result().
+    Validators :: validators(),
+    Value
+) -> validation_result(Value).
 
 validates(Validators, Value) -> do_validates(Validators, Value, todow:ok(Value)).
 
@@ -366,8 +368,10 @@ make_error(Code, Reason, Value, Msg) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec do_validates(
-    Validators :: validators(), Value :: any(), Result :: validation_result()
-) -> validation_result().
+    Validators :: validators(),
+    Value,
+    Result :: validation_result(Value)
+) -> validation_result(Value).
 
 do_validates([], _Value, Result) ->
     Result;
