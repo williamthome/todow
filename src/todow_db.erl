@@ -1,23 +1,17 @@
 -module(todow_db).
 -behavior(gen_server).
 
--include("./include/todow.hrl").
--include("./include/todow_db.hrl").
-
 -define(SERVER, ?MODULE).
--define(DEFAULT_ARGS, #{
-    default_schema => ?DEFAULT_SCHEMA
-}).
 
 -type init_args() :: #{
-    default_schema => schema(),
-    adapter => adapter()
+    default_schema => todow_db_repo:schema(),
+    adapter => todow_db_repo:adapter()
 }.
 
 -record(state, {
-    default_schema :: schema(),
+    default_schema :: todow_db_repo:schema(),
     % -behavior(todow_db_adapter).
-    adapter :: adapter()
+    adapter :: todow_db_repo:adapter()
 }).
 
 %% API functions
@@ -53,13 +47,13 @@ start_link(#{default_schema := DefaultSchema, adapter := Adapter}) ->
     },
     gen_server:start_link({local, ?SERVER}, ?MODULE, State, []);
 start_link(Args) ->
-    start_link(maps:merge(?DEFAULT_ARGS, Args)).
+    start_link(maps:merge(default_args(), Args)).
 
 %%------------------------------------------------------------------------------
 %% @doc Executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec equery(Query :: query()) -> result().
+-spec equery(Query :: todow_db_query:query()) -> todow:result().
 
 equery(Query) -> equery(Query, maps:new()).
 
@@ -67,7 +61,10 @@ equery(Query) -> equery(Query, maps:new()).
 %% @doc Executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec equery(Query :: query(), Options :: options()) -> result().
+-spec equery(
+    Query :: todow_db_query:query(),
+    Options :: todow_db_repo:options()
+) -> todow:result().
 
 equery(Query, Options) -> equery(undefined, Query, Options).
 
@@ -76,10 +73,10 @@ equery(Query, Options) -> equery(undefined, Query, Options).
 %% @end
 %%------------------------------------------------------------------------------
 -spec equery(
-    Connection :: connection(),
-    Query :: query(),
-    Options :: options()
-) -> result().
+    Connection :: todow_db_repo:connection(),
+    Query :: todow_db_query:query(),
+    Options :: todow_db_repo:options()
+) -> todow:result().
 
 equery(Connection, Query, Options) ->
     gen_server:call(?SERVER, {equery, Connection, Query, Options}).
@@ -88,7 +85,10 @@ equery(Connection, Query, Options) ->
 %% @doc Formats and executes a query.
 %% @end
 %%------------------------------------------------------------------------------
--spec fequery(Query :: query(), Params :: query_params()) -> result().
+-spec fequery(
+    Query :: todow_db_query:query(),
+    Params :: todow_db_query:query_params()
+) -> todow:result().
 
 fequery(Query, Params) -> fequery(Query, Params, maps:new()).
 
@@ -97,10 +97,10 @@ fequery(Query, Params) -> fequery(Query, Params, maps:new()).
 %% @end
 %%------------------------------------------------------------------------------
 -spec fequery(
-    Query :: query(),
-    Params :: query_params(),
-    Options :: options()
-) -> result().
+    Query :: todow_db_query:query(),
+    Params :: todow_db_query:query_params(),
+    Options :: todow_db_repo:options()
+) -> todow:result().
 
 fequery(Query, Params, Options) -> fequery(undefined, Query, Params, Options).
 
@@ -109,11 +109,11 @@ fequery(Query, Params, Options) -> fequery(undefined, Query, Params, Options).
 %% @end
 %%------------------------------------------------------------------------------
 -spec fequery(
-    Connection :: connection(),
-    Query :: query(),
-    Params :: query_params(),
-    Options :: options()
-) -> result().
+    Connection :: todow_db_repo:connection(),
+    Query :: todow_db_query:query(),
+    Params :: todow_db_query:query_params(),
+    Options :: todow_db_repo:options()
+) -> todow:result().
 
 fequery(Connection, Query, Params, Options) ->
     gen_server:call(?SERVER, {fequery, Connection, Query, Params, Options}).
@@ -122,19 +122,22 @@ fequery(Connection, Query, Params, Options) ->
 %% @doc Inserts data into db.
 %% @end
 %%------------------------------------------------------------------------------
--spec insert(Table :: table(), Payload :: payload()) -> result().
+-spec insert(
+    Table :: todow_db_repo:table(),
+    Payload :: todow_db_repo:payload()
+) -> todow:result().
 
-insert(Table, Payload) -> insert(Table, Payload, ?DEFAULT_OPTIONS).
+insert(Table, Payload) -> insert(Table, Payload, todow_db_repo:default_options()).
 
 %%------------------------------------------------------------------------------
 %% @doc Inserts data into db.
 %% @end
 %%------------------------------------------------------------------------------
 -spec insert(
-    Table :: table(),
-    Payload :: payload(),
-    Options :: options()
-) -> result().
+    Table :: todow_db_repo:table(),
+    Payload :: todow_db_repo:payload(),
+    Options :: todow_db_repo:options()
+) -> todow:result().
 
 insert(Table, Payload, Options) -> insert(undefined, Table, Payload, Options).
 
@@ -143,11 +146,11 @@ insert(Table, Payload, Options) -> insert(undefined, Table, Payload, Options).
 %% @end
 %%------------------------------------------------------------------------------
 -spec insert(
-    Connection :: connection(),
-    Table :: table(),
-    Payload :: payload(),
-    Options :: options()
-) -> result().
+    Connection :: todow_db_repo:connection(),
+    Table :: todow_db_repo:table(),
+    Payload :: todow_db_repo:payload(),
+    Options :: todow_db_repo:options()
+) -> todow:result().
 
 insert(Connection, Table, Payload, Options) ->
     gen_server:call(?SERVER, {insert, Connection, Table, Payload, Options}).
@@ -157,26 +160,26 @@ insert(Connection, Table, Payload, Options) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update(
-    Table :: table(),
-    Payload :: payload(),
-    ClauseQuery :: query(),
-    ClauseParams :: query_params()
-) -> result().
+    Table :: todow_db_repo:table(),
+    Payload :: todow_db_repo:payload(),
+    ClauseQuery :: todow_db_query:query(),
+    ClauseParams :: todow_db_query:query_params()
+) -> todow:result().
 
 update(Table, Payload, ClauseQuery, ClauseParams) ->
-    update(Table, Payload, ClauseQuery, ClauseParams, ?DEFAULT_OPTIONS).
+    update(Table, Payload, ClauseQuery, ClauseParams, todow_db_repo:default_options()).
 
 %%------------------------------------------------------------------------------
 %% @doc Updates db data.
 %% @end
 %%------------------------------------------------------------------------------
 -spec update(
-    Table :: table(),
-    Payload :: payload(),
-    ClauseQuery :: query(),
-    ClauseParams :: query_params(),
-    Options :: options()
-) -> result().
+    Table :: todow_db_repo:table(),
+    Payload :: todow_db_repo:payload(),
+    ClauseQuery :: todow_db_query:query(),
+    ClauseParams :: todow_db_query:query_params(),
+    Options :: todow_db_repo:options()
+) -> todow:result().
 
 update(Table, Payload, ClauseQuery, ClauseParams, Options) ->
     update(undefined, Table, Payload, ClauseQuery, ClauseParams, Options).
@@ -186,13 +189,13 @@ update(Table, Payload, ClauseQuery, ClauseParams, Options) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update(
-    Connection :: connection(),
-    Table :: table(),
-    Payload :: payload(),
-    ClauseQuery :: query(),
-    ClauseParams :: query_params(),
-    Options :: options()
-) -> result().
+    Connection :: todow_db_repo:connection(),
+    Table :: todow_db_repo:table(),
+    Payload :: todow_db_repo:payload(),
+    ClauseQuery :: todow_db_query:query(),
+    ClauseParams :: todow_db_query:query_params(),
+    Options :: todow_db_repo:options()
+) -> todow:result().
 
 update(Connection, Table, Payload, ClauseQuery, ClauseParams, Options) ->
     gen_server:call(
@@ -205,24 +208,24 @@ update(Connection, Table, Payload, ClauseQuery, ClauseParams, Options) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_by_id(
-    Table :: table(),
-    Id :: id(),
-    Payload :: payload()
-) -> result().
+    Table :: todow_db_repo:table(),
+    Id :: todow_db_repo:id(),
+    Payload :: todow_db_repo:payload()
+) -> todow:result().
 
 update_by_id(Table, Id, Payload) ->
-    update_by_id(Table, Id, Payload, ?DEFAULT_OPTIONS).
+    update_by_id(Table, Id, Payload, todow_db_repo:default_options()).
 
 %%------------------------------------------------------------------------------
 %% @doc Updates db data by id.
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_by_id(
-    Table :: table(),
-    Id :: id(),
-    Payload :: payload(),
-    Options :: options()
-) -> result().
+    Table :: todow_db_repo:table(),
+    Id :: todow_db_repo:id(),
+    Payload :: todow_db_repo:payload(),
+    Options :: todow_db_repo:options()
+) -> todow:result().
 
 update_by_id(Table, Id, Payload, Options) ->
     update_by_id(undefined, Table, Id, Payload, Options).
@@ -232,12 +235,12 @@ update_by_id(Table, Id, Payload, Options) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_by_id(
-    Connection :: connection(),
-    Table :: table(),
-    Id :: id(),
-    Payload :: payload(),
-    Options :: options()
-) -> result().
+    Connection :: todow_db_repo:connection(),
+    Table :: todow_db_repo:table(),
+    Id :: todow_db_repo:id(),
+    Payload :: todow_db_repo:payload(),
+    Options :: todow_db_repo:options()
+) -> todow:result().
 
 update_by_id(Connection, Table, Id, Payload, Options) ->
     gen_server:call(
@@ -249,7 +252,7 @@ update_by_id(Connection, Table, Id, Payload, Options) ->
 %% @doc Executes a function in a transaction.
 %% @end
 %%------------------------------------------------------------------------------
--spec transaction(Fun :: transaction_fun()) -> result().
+-spec transaction(Fun :: todow_db_repo:transaction_fun()) -> todow:result().
 
 transaction(Fun) -> transaction(undefined, Fun).
 
@@ -258,8 +261,9 @@ transaction(Fun) -> transaction(undefined, Fun).
 %% @end
 %%------------------------------------------------------------------------------
 -spec transaction(
-    Connection :: connection(), Fun :: transaction_fun()
-) -> result().
+    Connection :: todow_db_repo:connection(),
+    Fun :: todow_db_repo:transaction_fun()
+) -> todow:result().
 
 transaction(Connection, Fun) ->
     gen_server:call(?SERVER, {transaction, Connection, Fun}).
@@ -341,7 +345,17 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%=============================================================================
 
--spec fetch_schema(Options :: options(), #state{}) -> schema().
+-spec default_args() -> init_args().
+
+default_args() ->
+    #{
+        default_schema => todow_db_repo:default_schema()
+    }.
+
+-spec fetch_schema(
+    Options :: todow_db_repo:options(),
+    #state{}
+) -> todow_db_repo:schema().
 
 fetch_schema(#{schema := undefined}, #state{default_schema = Schema}) ->
     Schema;

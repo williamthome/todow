@@ -1,7 +1,16 @@
 -module(todow_db_query).
 
--include("./include/todow.hrl").
--include("./include/todow_db.hrl").
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
+
+-type query() :: string().
+-type query_param() :: any().
+-type query_params() :: list(query_param()).
+-type not_quoted(Type) :: {not_quote, Type}.
+-type not_quoted() :: not_quoted(any()).
+-type not_quoted_string() :: not_quoted(string()).
+-type maybe_quoted() :: not_quoted() | null | string().
 
 -define(should_quote(Value), is_list(Value) orelse is_binary(Value)).
 
@@ -35,6 +44,7 @@
 %% @doc Quotes a string.
 %% @end
 %%------------------------------------------------------------------------------
+% TODO: Change to todow:result()
 -spec quote(Value :: any()) -> {ok, string()} | todow_convert_utils:not_string().
 
 quote(Value) ->
@@ -203,7 +213,9 @@ format_clause(Query, Params) -> format_unquoted(Query, Params).
 %% @end
 %%------------------------------------------------------------------------------
 -spec format_column_value(
-    Column :: column(), Separator :: string(), Value :: value()
+    Column :: todow_db_repo:column(),
+    Separator :: string(),
+    Value :: todow_db_repo:value()
 ) -> string().
 
 format_column_value(Column, Separator, Value) ->
@@ -217,7 +229,8 @@ format_column_value(Column, Separator, Value) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec format_column_value_with_equal_separator(
-    Column :: column(), Value :: value()
+    Column :: todow_db_repo:column(),
+    Value :: todow_db_repo:value()
 ) -> string().
 
 format_column_value_with_equal_separator(Column, Value) ->
@@ -227,7 +240,7 @@ format_column_value_with_equal_separator(Column, Value) ->
 %% @doc Formats payload for set.
 %% @end
 %%------------------------------------------------------------------------------
--spec format_set(Payload :: payload()) -> not_quoted_string().
+-spec format_set(Payload :: todow_db_repo:payload()) -> not_quoted_string().
 
 format_set(Payload) ->
     {Columns, Values} = columns_and_values_from_payload(Payload),
@@ -238,7 +251,8 @@ format_set(Payload) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec format_set(
-    Columns :: columns(), Values :: values()
+    Columns :: todow_db_repo:columns(),
+    Values :: todow_db_repo:values()
 ) -> not_quoted_string().
 
 format_set(Columns, Values) ->
@@ -288,8 +302,8 @@ values_to_string(Values) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec columns_and_values_from_payload(
-    Payload :: payload()
-) -> columns_and_values_tuple().
+    Payload :: todow_db_repo:payload()
+) -> todow_db_repo:columns_and_values_tuple().
 
 columns_and_values_from_payload(Map) when is_map(Map) ->
     {lists:reverse(maps:keys(Map)), lists:reverse(maps:values(Map))};
@@ -303,7 +317,7 @@ columns_and_values_from_payload({Columns, Values}) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec columns_and_values_to_string_from_payload(
-    Payload :: payload()
+    Payload :: todow_db_repo:payload()
 ) -> {not_quoted_string(), maybe_quoted()}.
 
 columns_and_values_to_string_from_payload(Payload) ->
@@ -315,10 +329,10 @@ columns_and_values_to_string_from_payload(Payload) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec insert_query(
-    Schema :: schema(),
-    Table :: table(),
-    Payload :: payload(),
-    Returning :: column()
+    Schema :: todow_db_repo:schema(),
+    Table :: todow_db_repo:table(),
+    Payload :: todow_db_repo:payload(),
+    Returning :: todow_db_repo:column()
 ) -> query().
 
 insert_query(Schema, Table, Payload, Returning) ->
@@ -332,12 +346,12 @@ insert_query(Schema, Table, Payload, Returning) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_query(
-    Schema :: schema(),
-    Table :: table(),
-    Payload :: payload(),
+    Schema :: todow_db_repo:schema(),
+    Table :: todow_db_repo:table(),
+    Payload :: todow_db_repo:payload(),
     ClauseQuery :: query(),
     ClauseParams :: query_params(),
-    Returning :: column()
+    Returning :: todow_db_repo:column()
 ) -> query().
 
 update_query(Schema, Table, Payload, ClauseQuery, ClauseParams, Returning) ->

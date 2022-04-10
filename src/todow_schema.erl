@@ -7,7 +7,9 @@
 %%%-----------------------------------------------------------------------------
 -module(todow_schema).
 
--include("./include/todow.hrl").
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
 
 -type name() :: atom().
 -type fields() :: nonempty_list(todow_field:t()).

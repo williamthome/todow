@@ -25,17 +25,81 @@
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
--export([context/0, sudo_context/0]).
--export([manage_schema/2, manage_data/2]).
--export([observe_acl_is_allowed/2]).
+-type result_ok(Type) :: {ok, Type}.
+-type error_code() ::
+    bad_arg
+    | unauthorized
+    | forbidden
+    | internal_server_error.
+-type error_msg() :: string().
+-type result_error(Error) ::
+    {error, #{
+        code => error_code(),
+        error => Error,
+        msg => error_msg()
+    }}.
+-type result(OkType, ErrorType) ::
+    result_ok(OkType) | result_error(ErrorType).
 
+-export_type([
+    result_ok/1,
+    error_code/0,
+    error_msg/0,
+    result_error/1,
+    result/2
+]).
+
+% Result functions
 -export([
+    ok/1,
+    error/3
+]).
+
+% Zotonic support functions
+-export([
+    context/0,
+    sudo_context/0,
+
+    manage_schema/2,
+    manage_data/2,
+
+    observe_acl_is_allowed/2,
+
     'mqtt:test/#'/2,
     event/2
 ]).
 
 %%%=============================================================================
-%%% Support functions
+%%% Result functions
+%%%=============================================================================
+
+%%------------------------------------------------------------------------------
+%% @doc Gen ok result.
+%% @end
+%%------------------------------------------------------------------------------
+-spec ok(Result) -> result_ok(Result).
+
+ok(Result) -> {ok, Result}.
+
+%%------------------------------------------------------------------------------
+%% @doc Gen error result.
+%% @end
+%%------------------------------------------------------------------------------
+-spec error(
+    Code :: error_code(),
+    Error,
+    Msg :: error_msg()
+) -> result_error(Error).
+
+error(Code, Error, Msg) ->
+    {error, #{
+        code => Code,
+        error => Error,
+        msg => Msg
+    }}.
+
+%%%=============================================================================
+%%% Zotonic support functions
 %%%=============================================================================
 
 context() -> z:c(todow).

@@ -1,6 +1,8 @@
 -module(todow_changeset).
 
--include("./include/todow.hrl").
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
 
 -define(DEFAULT_DATA, maps:new()).
 -define(DEFAULT_CHANGES, maps:new()).

@@ -1,7 +1,5 @@
 -module(todow_validation).
 
--include("./include/todow.hrl").
-
 -define(is_defined(Value),
     Value =/= undefined andalso Value =/= "" andalso Value =/= <<>>
 ).
@@ -44,18 +42,19 @@
 ).
 
 -type validation_error_reason() :: atom().
--type validation_what_error(ValueType) ::
-    {Reason :: validation_error_reason(), Value :: ValueType}.
--type validation_error(ValueType) ::
-    todow_error(validation_what_error(ValueType)).
--type validation_result(ValueType) ::
-    todow_result(ValueType, validation_what_error(ValueType)).
+-type validation_error(Value) ::
+    {Reason :: validation_error_reason(), Value}.
+-type validation_error_result(Value) ::
+    todow:error_result(validation_error(Value)).
+-type validation_result(Value) ::
+    todow:result(Value, validation_error(Value)).
 -type validation_result() :: validation_result(any()).
 -type validates() :: fun((1) -> validation_result()).
 -type validators() :: list(validates()).
 
 -export_type([
     validation_error/1,
+    validation_error_result/1,
     validation_result/0, validation_result/1,
     validates/0,
     validators/0
@@ -126,7 +125,7 @@ in_range(Value, Min, Max) -> ?in_range(Value, Min, Max).
 -spec validates_required(Value :: any()) -> validation_result().
 
 validates_required(Value) when ?is_defined(Value) ->
-    ?OK(Value);
+    todow:ok(Value);
 validates_required(Value) ->
     Msg = "Value is required",
     make_error(required, Value, Msg).
@@ -146,7 +145,7 @@ required_validator() -> fun validates_required/1.
 -spec validates_is_integer(Value :: any()) -> validation_result().
 
 validates_is_integer(Value) when is_integer(Value) ->
-    ?OK(Value);
+    todow:ok(Value);
 validates_is_integer(Value) ->
     Msg = "Value must be an integer.",
     make_error(is_integer, Value, Msg).
@@ -166,7 +165,7 @@ is_integer_validator() -> fun validates_is_integer/1.
 -spec validates_is_float(Value :: any()) -> validation_result().
 
 validates_is_float(Value) when is_float(Value) ->
-    ?OK(Value);
+    todow:ok(Value);
 validates_is_float(Value) ->
     Msg = "Value must be a float.",
     make_error(is_float, Value, Msg).
@@ -178,7 +177,7 @@ validates_is_float(Value) ->
 -spec validates_is_number(Value :: any()) -> validation_result().
 
 validates_is_number(Value) when is_number(Value) ->
-    ?OK(Value);
+    todow:ok(Value);
 validates_is_number(Value) ->
     Msg = "Value must be a number.",
     make_error(is_number, Value, Msg).
@@ -198,7 +197,7 @@ is_number_validator() -> fun validates_is_number/1.
 -spec validates_is_binary(Value :: any()) -> validation_result().
 
 validates_is_binary(Value) when is_binary(Value) ->
-    ?OK(Value);
+    todow:ok(Value);
 validates_is_binary(Value) ->
     Msg = "Value must be a binary.",
     make_error(is_binary, Value, Msg).
@@ -218,7 +217,7 @@ is_binary_validator() -> fun validates_is_binary/1.
 -spec validates_is_boolean(Value :: any()) -> validation_result().
 
 validates_is_boolean(Value) when is_boolean(Value) ->
-    ?OK(Value);
+    todow:ok(Value);
 validates_is_boolean(Value) ->
     Msg = "Value must be a boolean.",
     make_error(is_boolean, Value, Msg).
@@ -246,7 +245,7 @@ is_float_validator() -> fun validates_is_float/1.
 -spec validates_is_date(Value :: any()) -> validation_result().
 
 validates_is_date(Value) when ?is_date(Value) ->
-    ?OK(Value);
+    todow:ok(Value);
 validates_is_date(Value) ->
     Msg = "Value must be a date.",
     make_error(is_date, Value, Msg).
@@ -266,7 +265,7 @@ is_date_validator() -> fun validates_is_date/1.
 -spec validates_is_time(Value :: any()) -> validation_result().
 
 validates_is_time(Value) when ?is_time(Value) ->
-    ?OK(Value);
+    todow:ok(Value);
 validates_is_time(Value) ->
     Msg = "Value must be a time.",
     make_error(is_time, Value, Msg).
@@ -286,7 +285,7 @@ is_time_validator() -> fun validates_is_time/1.
 -spec validates_is_datetime(Value :: any()) -> validation_result().
 
 validates_is_datetime(Value) when ?is_datetime(Value) ->
-    ?OK(Value);
+    todow:ok(Value);
 validates_is_datetime(Value) ->
     Msg = "Value must be a datetime.",
     make_error(is_datetime, Value, Msg).
@@ -308,7 +307,7 @@ is_datetime_validator() -> fun validates_is_datetime/1.
 ) -> validation_result().
 
 validates_range(Value, Min, Max) when ?in_range(Value, Min, Max) ->
-    ?OK(Value);
+    todow:ok(Value);
 validates_range(Value, Min, Max) ->
     Msg = lists:concat(["Value must a number between ", Min, " and ", Max, "."]),
     make_error(range, Value, Msg).
@@ -330,7 +329,7 @@ range_validator(Min, Max) ->
     Validators :: validators(), Value :: any()
 ) -> validation_result().
 
-validates(Validators, Value) -> do_validates(Validators, Value, ?OK(Value)).
+validates(Validators, Value) -> do_validates(Validators, Value, todow:ok(Value)).
 
 %%------------------------------------------------------------------------------
 %% @doc Gen validation error.
@@ -339,8 +338,8 @@ validates(Validators, Value) -> do_validates(Validators, Value, ?OK(Value)).
 -spec make_error(
     Reason :: validation_error_reason(),
     Value,
-    Msg :: todow_error_msg()
-) -> validation_error(Value).
+    Msg :: todow:error_msg()
+) -> validation_error_result(Value).
 
 make_error(Reason, Value, Msg) -> make_error(bad_arg, Reason, Value, Msg).
 
@@ -349,14 +348,14 @@ make_error(Reason, Value, Msg) -> make_error(bad_arg, Reason, Value, Msg).
 %% @end
 %%------------------------------------------------------------------------------
 -spec make_error(
-    Code :: todow_error_code(),
+    Code :: todow:error_code(),
     Reason :: validation_error_reason(),
     Value,
-    Msg :: todow_error_msg()
-) -> validation_error(Value).
+    Msg :: todow:error_msg()
+) -> validation_error_result(Value).
 
 make_error(Code, Reason, Value, Msg) ->
-    ?ERROR(Code, {Reason, Value}, Msg).
+    todow:error(Code, {Reason, Value}, Msg).
 
 %%%=============================================================================
 %%% Internal functions

@@ -1,8 +1,12 @@
 -module(m_todow).
 
--include("../include/todow.hrl").
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
+
 -include("../include/todow_schema.hrl").
 
+% TODO: Transform schema into a behavior
 -define(SCHEMA, ?schema(
     todow,
     [

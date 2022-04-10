@@ -1,6 +1,8 @@
 -module(todow_utils).
 
--include("../include/todow.hrl").
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
 
 -type prop() :: map() | proplists:proplist().
 

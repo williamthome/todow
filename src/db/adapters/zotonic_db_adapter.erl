@@ -1,8 +1,6 @@
 -module(zotonic_db_adapter).
 -behavior(todow_db_adapter).
 
--include("../../include/todow_db.hrl").
-
 -define(CONTEXT, todow:context()).
 
 -export([
@@ -15,7 +13,7 @@
 %% @doc Returns the default context as connection.
 %% @end
 %%------------------------------------------------------------------------------
--spec get_connection() -> connection().
+-spec get_connection() -> todow_db_repo:connection().
 
 get_connection() -> ?CONTEXT.
 
@@ -24,9 +22,9 @@ get_connection() -> ?CONTEXT.
 %% @end
 %%------------------------------------------------------------------------------
 -spec equery(
-    Connection :: connection(),
-    Query :: string()
-) -> result().
+    Connection :: todow_db_repo:connection(),
+    Query :: todow_db_query:query()
+) -> todow:result().
 
 equery(Connection, Query) ->
     Result = z_db:squery(Query, Connection),
@@ -38,9 +36,9 @@ equery(Connection, Query) ->
 %%------------------------------------------------------------------------------
 
 -spec transaction(
-    Connection :: connection(),
-    Fun :: transaction_fun()
-) -> result().
+    Connection :: todow_db_repo:connection(),
+    Fun :: todow_db_repo:transaction_fun()
+) -> todow:result().
 
 transaction(Connection, Fun) ->
     Result = z_db:transaction(Fun, Connection),
@@ -54,7 +52,7 @@ transaction(Connection, Fun) ->
 %% @doc Transforms to expected db result.
 %% @end
 %%------------------------------------------------------------------------------
--spec to_db_result(Result :: any()) -> result().
+-spec to_db_result(Result) -> todow:result(Result).
 
 to_db_result({ok, _, _Column, [{Value}]}) ->
     {ok, Value};

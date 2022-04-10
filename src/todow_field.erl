@@ -7,7 +7,11 @@
 %%%-----------------------------------------------------------------------------
 -module(todow_field).
 
--include("./include/todow.hrl").
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
+
+% TODO: Remove
 -include("./include/todow_field.hrl").
 
 -define(DEFAULT_PRIVATE, false).

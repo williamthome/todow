@@ -1,6 +1,8 @@
 -module(todow_param).
 
--include("./include/todow.hrl").
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
 
 -define(PARAM_DEFAULTS, #{
     value => undefined,

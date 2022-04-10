@@ -1,7 +1,5 @@
 -module(todow_db_schema).
 
--include("./include/todow.hrl").
-
 -export([
     setup/0, setup/1,
     recreate/0, recreate/1,
