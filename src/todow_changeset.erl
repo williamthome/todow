@@ -227,7 +227,7 @@ is_valid(#changeset{valid = Valid}) -> Valid.
 
 put_error(Changeset, Key, Error) ->
     Errors = maps:put(Key, Error, get_errors(Changeset)),
-    Changeset#changeset{errors = Errors}.
+    Changeset#changeset{errors = Errors, valid = false}.
 
 %%------------------------------------------------------------------------------
 %% @doc Set changeset action.
@@ -311,7 +311,10 @@ cast(Data, Changes, ValidKeys, Options) when
 
 validates(Changeset, Validators, Key, Value) ->
     ValidateResult = todow_validation:validates(Validators, Value),
-    maybe_put_validation_error(ValidateResult, Changeset, Key).
+    ChangesetValidated = maybe_put_validation_error(
+        ValidateResult, Changeset, Key
+    ),
+    set_valid(ChangesetValidated).
 
 %%------------------------------------------------------------------------------
 %% @doc Flag to not update using default value. Useful for function as default.
@@ -453,7 +456,7 @@ maybe_set_change_test() ->
 
 put_error_test() ->
     ?assertEqual(
-        #changeset{errors = #{foo => bar}},
+        #changeset{errors = #{foo => bar}, valid = false},
         put_error(#changeset{}, foo, bar)
     ).
 
@@ -468,7 +471,7 @@ changes_without_errors_test() ->
 
 do_validates_test() ->
     ?assertEqual(
-        #changeset{action = ?update, errors = #{foo => bar}},
+        #changeset{action = ?update, errors = #{foo => bar}, valid = false},
         validates(
             #changeset{action = ?update},
             [fun(bar) -> {error, bar} end],
@@ -477,7 +480,7 @@ do_validates_test() ->
         )
     ),
     ?assertEqual(
-        #changeset{action = ?new},
+        #changeset{action = ?new, valid = true},
         validates(#changeset{action = ?new}, [], any_key, any_value)
     ).
 
