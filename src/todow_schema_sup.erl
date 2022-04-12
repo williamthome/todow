@@ -1,4 +1,4 @@
--module(todow_sup).
+-module(todow_schema_sup).
 -behavior(supervisor).
 
 -define(SERVER, ?MODULE).
@@ -27,19 +27,17 @@ init([]) ->
         strategy => one_for_one
     },
     Children = [
-        #{
-            id => todow_db,
-            start => {todow_db, start_link, [#{adapter => zotonic_db_adapter}]}
-        },
-        #{
-            id => todow_schema_sup,
-            start => {todow_schema_sup, start_link, []}
-        }
+        child_spec(todo_schema)
     ],
     {ok, {SupFlags, Children}}.
 
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
+-spec child_spec(Module :: module()) -> supervisor:child_spec().
 
-% nothing here!
+child_spec(Module) ->
+    #{
+        id => Module,
+        start => {todow_schema, start_link, [Module]}
+    }.
