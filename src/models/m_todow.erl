@@ -23,7 +23,7 @@
 -ifdef(TEST).
 
 schema_test() ->
-    FieldsName = todow_schema:field_names(?SCHEMA),
+    FieldsName = todow_schema_core:field_names(?SCHEMA),
     ?assert(
         lists:all(
             fun(Name) -> lists:member(Name, FieldsName) end,

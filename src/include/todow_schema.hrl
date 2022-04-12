@@ -14,5 +14,5 @@
 -define(timestamps, {timestamps, true}).
 
 -define(schema(Name, Fields, Options),
-    todow_schema:new(Name, Fields, maps:from_list(Options))
+    todow_schema_core:new(Name, Fields, maps:from_list(Options))
 ).

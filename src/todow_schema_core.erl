@@ -5,7 +5,7 @@
 %%% @author William Fank Thomé
 %%% @end
 %%%-----------------------------------------------------------------------------
--module(todow_schema).
+-module(todow_schema_core).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
